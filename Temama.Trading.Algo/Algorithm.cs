@@ -47,7 +47,7 @@ namespace Temama.Trading.Algo
             var profit = "?";
             if (_lastFiatBalance != 0)
             {
-                profit = (sum - _lastFiatBalance).ToString();
+                profit = Math.Round(sum - _lastFiatBalance, 5).ToString();
                 if (!profit.StartsWith("-"))
                     profit = "+" + profit;
             }
