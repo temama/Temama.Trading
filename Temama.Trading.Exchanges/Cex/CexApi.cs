@@ -94,7 +94,7 @@ namespace Temama.Trading.Exchanges.Cex
 
         public void CancellOrder(Order order)
         {
-            var response = UserQuery("cancel_order", new Dictionary<string, string>()
+            var response = UserQuery("cancel_order/", new Dictionary<string, string>()
                 { { "id", order.Id.ToString() } });
             Logger.Spam("Response: " + response);
 

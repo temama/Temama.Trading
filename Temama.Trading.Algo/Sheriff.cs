@@ -287,6 +287,7 @@ namespace Temama.Trading.Algo
             if (placeInvertOrder)
             {
                 var funds = _api.GetFunds(_base, _fund);
+                last = lastTrade.Price;
                 if (lastTrade.Side == "sell")
                 {
                     Logger.Info(string.Format("Last trade was: {0}; Placing buy order", lastTrade));
