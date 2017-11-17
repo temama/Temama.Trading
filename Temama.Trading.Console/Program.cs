@@ -4,8 +4,10 @@ using System.Xml;
 using Temama.Trading.Algo;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Notifications;
 using Temama.Trading.Exchanges.Cex;
 using Temama.Trading.Exchanges.Kuna;
+using TGNotifier;
 
 namespace Temama.Trading.Console
 {
@@ -72,6 +74,17 @@ namespace Temama.Trading.Console
             Logger.Init(file, new LoggerConsoleEcho());
             var config = new XmlDocument();
             config.Load(file + ".xml");
+
+            TGNotifierClient tgNotificator;
+            try
+            {
+                tgNotificator = new TGNotifierClient();
+                NotificationManager.Init(tgNotificator);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to create TGNotifier: " + ex.Message);
+            }
 
             IExchangeApi api;
             switch (sParams["exchange"].ToLower())

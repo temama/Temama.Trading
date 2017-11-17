@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Notifications;
 
 namespace Temama.Trading.Algo
 {
@@ -16,6 +17,11 @@ namespace Temama.Trading.Algo
         private int _interval = 60;
         private double _priceToSell;
         private double _priceToBuy;
+
+        public override string Name()
+        {
+            return "Ranger";
+        }
 
         public override void Init(IExchangeApi api, XmlDocument config)
         {
@@ -117,13 +123,15 @@ namespace Temama.Trading.Algo
             if (funds.Values[_base] > _minBaseToTrade)
             {
                 Logger.Info("Ranger: Can place sell order...");
-                _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), _priceToSell);
+                var order = _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), _priceToSell);
+                NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
             }
 
             if (funds.Values[_fund] > _minFundToTrade)
             {
                 Logger.Info("Ranger: Can place buy order...");
-                _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund])), _priceToBuy);
+                var order = _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund])), _priceToBuy);
+                NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
             }
         }
     }

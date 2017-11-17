@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{00217350-302C-4A3D-BC20-263F7A45D7E8}</ProjectGuid>
+    <ProjectGuid>{7130BF9D-A384-4B4D-8872-A097A09E5AA4}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Temama.Trading.Core</RootNamespace>
-    <AssemblyName>Temama.Trading.Core</AssemblyName>
+    <RootNamespace>TGNotifier</RootNamespace>
+    <AssemblyName>TGNotifier</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,9 +30,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="BigMath, Version=0.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TLSharp.0.1.0.313\lib\net45\BigMath.dll</HintPath>
     </Reference>
+    <Reference Include="Ionic.Zip, Version=1.9.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotNetZip.1.9.3\lib\net20\Ionic.Zip.dll</HintPath>
+    </Reference>
+    <Reference Include="Ionic.ZLib, Version=2.0.0.14, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TLSharp.0.1.0.313\lib\net45\Ionic.ZLib.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -41,26 +48,30 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="TeleSharp.TL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TLSharp.0.1.0.313\lib\net45\TeleSharp.TL.dll</HintPath>
+    </Reference>
+    <Reference Include="TLSharp.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TLSharp.0.1.0.313\lib\net45\TLSharp.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Exchange\IExchangeAnalitics.cs" />
-    <Compile Include="Exchange\IExchangeApi.cs" />
-    <Compile Include="Exchange\Funds.cs" />
-    <Compile Include="Exchange\Order.cs" />
-    <Compile Include="Exchange\OrderBook.cs" />
-    <Compile Include="Exchange\Tick.cs" />
-    <Compile Include="Exchange\Trade.cs" />
-    <Compile Include="Logger\ILogHandler.cs" />
-    <Compile Include="Logger\Logger.cs" />
-    <Compile Include="Logger\LogSeverity.cs" />
-    <Compile Include="Notifications\INotificator.cs" />
-    <Compile Include="Notifications\NotificationManager.cs" />
+    <Compile Include="TGNotifierClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\UnixTime.cs" />
-    <Compile Include="Web\WebApi.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Temama.Trading.Core\Temama.Trading.Core.csproj">
+      <Project>{00217350-302C-4A3D-BC20-263F7A45D7E8}</Project>
+      <Name>Temama.Trading.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TGNotifierSampleConfig.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

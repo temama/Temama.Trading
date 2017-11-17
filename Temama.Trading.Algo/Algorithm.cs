@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Notifications;
 
 namespace Temama.Trading.Algo
 {
@@ -26,6 +27,19 @@ namespace Temama.Trading.Algo
         protected string _pair;
         protected IExchangeApi _api;
         protected int _criticalsCount = 0;
+
+        public string WhoAmI
+        {
+            get
+            {
+                return string.Format("{0} on {1}", Name(), _api.Name());
+            }
+        }
+
+        public virtual string Name()
+        {
+            return "Algorithm";
+        }
 
         public abstract void Init(IExchangeApi api, XmlDocument config);
 
@@ -53,6 +67,7 @@ namespace Temama.Trading.Algo
             }
 
             Logger.Info(string.Format("--------------- Fiat amount: {0} [{1}]-----------------", sum, profit));
+            NotificationManager.SendInfo(WhoAmI, string.Format("Fiat: {0} [{1}]", sum, profit));
 
             _lastFiatBalance = sum;
             _lastFiatBalanceCheckTime = DateTime.Now;
@@ -87,7 +102,8 @@ namespace Temama.Trading.Algo
             _criticalsCount++;
             if (_criticalsCount >= _maxCriticalsCount)
             {
-                Logger.Critical("Sheriff: Criticals count exceeded maximum. Something goes wrong. Will stop trading");
+                Logger.Critical("Criticals count exceeded maximum. Something goes wrong. Will stop trading");
+                NotificationManager.SendError(WhoAmI, "Exceeded max criticals. Stopping...");
                 StopTrading();
             }
         }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Notifications;
 
 namespace Temama.Trading.Algo
 {
@@ -22,6 +23,11 @@ namespace Temama.Trading.Algo
         private IExchangeAnalitics _analitics;
         private DateTime _lastRangeCorrectionTime = DateTime.MinValue;
         private TimeSpan _rangeCorrectionInterval = TimeSpan.FromMinutes(30);
+
+        public override string Name()
+        {
+            return "RangerPRO";
+        }
 
         public override void Init(IExchangeApi api, XmlDocument config)
         {
@@ -164,7 +170,25 @@ namespace Temama.Trading.Algo
             _priceToBuy = Math.Round(balancedMidPrice - balancedMidPrice * _percentToBuy, 4);
             _priceToSell = Math.Round(balancedMidPrice + balancedMidPrice * _percentToSell, 4);
 
-            Logger.Info(string.Format("!!! Range was corrected to: Buy={0}; Sell={1} !!!", _priceToBuy, _priceToSell));
+            var msg = string.Format("Range was corrected to: Buy={0}; Sell={1}", _priceToBuy, _priceToSell);
+            Logger.Info("!!! " + msg);
+            NotificationManager.SendInfo(WhoAmI, msg);
+
+            var orders = _api.GetMyOrders(_base, _fund);
+            foreach (var ord in orders)
+            {
+                if ((DateTime.Now - ord.CreatedAt).TotalHours >= _hoursToAnalyze)
+                {
+                    var closest = double.MaxValue;
+                    foreach (var tick in stats)
+                    {
+                        if (Math.Abs(ord.Price - tick.Last) < closest)
+                            closest = Math.Abs(ord.Price - tick.Last);
+                    }
+                    Logger.Info(string.Format("WARN: for last {0} hours closest price diff with [{1}] order was:{2}",
+                        _hoursToAnalyze, ord, closest));
+                }
+            }
         }
 
         private int SortTickAscByDateTime(Tick first, Tick second)
@@ -183,13 +207,15 @@ namespace Temama.Trading.Algo
             if (funds.Values[_base] > _minBaseToTrade)
             {
                 Logger.Info("RangerPro: Can place sell order...");
-                _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), _priceToSell);
+                var order = _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), _priceToSell);
+                NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
             }
 
             if (funds.Values[_fund] > _minFundToTrade)
             {
                 Logger.Info("RangerPro: Can place buy order...");
-                _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund])), _priceToBuy);
+                var order = _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund])), _priceToBuy);
+                NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
             }
         }
 

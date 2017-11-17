@@ -13,6 +13,7 @@ namespace Temama.Trading.Core.Exchange
         public string Side { get; set; }
         public double Price { get; set; }
         public double Volume { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public static int SortByPrice(Order first, Order second)
         {

@@ -24,7 +24,7 @@ namespace Temama.Trading.Exchanges.Kuna
 
         public string Name()
         {
-            return "KUNA";
+            return "KUNA.IO";
         }
 
         public void Init(XmlDocument config)

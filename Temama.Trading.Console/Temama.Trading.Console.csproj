@@ -61,6 +61,10 @@
       <Project>{8415c778-f268-4d04-90b9-c6caa16606eb}</Project>
       <Name>Temama.Trading.Exchanges</Name>
     </ProjectReference>
+    <ProjectReference Include="..\TGNotifier\TGNotifier.csproj">
+      <Project>{7130BF9D-A384-4B4D-8872-A097A09E5AA4}</Project>
+      <Name>TGNotifier</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

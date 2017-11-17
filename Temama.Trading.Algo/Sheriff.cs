@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Notifications;
 
 namespace Temama.Trading.Algo
 {
@@ -21,6 +22,11 @@ namespace Temama.Trading.Algo
         private double _buyNearPercent;
         private double _buyFarPercent;
         private bool _allowAutoBalanceOrders = false; // refer to description of _imbalanceValue;       
+
+        public override string Name()
+        {
+            return "Sheriff";
+        }
 
         public override void Init(IExchangeApi api, XmlDocument config)
         {
@@ -212,7 +218,9 @@ namespace Temama.Trading.Algo
                 {
                     var price = last - ((myOrders[0].Price <= last - last * _buyFarPercent) ?
                         last * _buyNearPercent : last * _buyFarPercent);
-                    _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(price, GetAlmolstAllFunds(funds.Values[_fund])), price);
+                    var order = _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(price, GetAlmolstAllFunds(funds.Values[_fund])), price);
+                    NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
+
                 }
                 else
                     Logger.Info(string.Format("Not enought funds to place buy order: {0} UAH", funds.Values[_fund]));
@@ -222,7 +230,8 @@ namespace Temama.Trading.Algo
                 {
                     var price = last + ((myOrders[1].Price >= last + last * _sellFarPercent) ?
                         last * _sellNearPercent : last * _sellFarPercent);
-                    _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), price);
+                    var order = _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), price);
+                    NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
                 }
                 else
                     Logger.Info(string.Format("Not enough funds to place sell order: {0} BTC", funds.Values[_base]));
@@ -294,7 +303,8 @@ namespace Temama.Trading.Algo
                     if (funds.Values[_fund] >= _minFundToTrade)
                     {
                         var price = last - last * _buyNearPercent;
-                        _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(price, GetAlmolstAllFunds(funds.Values[_fund])), price);
+                        var order = _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(price, GetAlmolstAllFunds(funds.Values[_fund])), price);
+                        NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
                     }
                     else
                         Logger.Error(string.Format("Not enough funds to place order: {0}", funds));
@@ -305,7 +315,8 @@ namespace Temama.Trading.Algo
                     if (funds.Values[_base] >= _minBaseToTrade)
                     {
                         var price = last + last * _sellNearPercent;
-                        _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), price);
+                        var order = _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), price);
+                        NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
                     }
                     else
                         Logger.Error(string.Format("Not enough funds to place order: {0}", funds));

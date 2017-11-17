@@ -19,7 +19,8 @@ namespace Temama.Trading.Exchanges.Kuna
                 Pair = (json["market"] as JValue).Value.ToString(),
                 Side = (json["side"] as JValue).Value.ToString(),
                 Price = Convert.ToDouble((json["price"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
-                Volume = Convert.ToDouble((json["volume"] as JValue).Value.ToString(), CultureInfo.InvariantCulture)
+                Volume = Convert.ToDouble((json["volume"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
+                CreatedAt = DateTime.Parse((json["created_at"] as JValue).Value.ToString())
             };
             return order;
         }
