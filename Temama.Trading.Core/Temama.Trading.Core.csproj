@@ -43,15 +43,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Exchange\IExchangeAnalitics.cs" />
     <Compile Include="Exchange\IExchangeApi.cs" />
     <Compile Include="Exchange\Funds.cs" />
     <Compile Include="Exchange\Order.cs" />
     <Compile Include="Exchange\OrderBook.cs" />
+    <Compile Include="Exchange\Tick.cs" />
     <Compile Include="Exchange\Trade.cs" />
     <Compile Include="Logger\ILogHandler.cs" />
     <Compile Include="Logger\Logger.cs" />
     <Compile Include="Logger\LogSeverity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\UnixTime.cs" />
     <Compile Include="Web\WebApi.cs" />
   </ItemGroup>
   <ItemGroup>

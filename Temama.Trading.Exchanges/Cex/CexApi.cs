@@ -13,11 +13,12 @@ using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Utils;
 using Temama.Trading.Core.Web;
 
 namespace Temama.Trading.Exchanges.Cex
 {
-    public class CexApi : IExchangeApi
+    public class CexApi : IExchangeApi, IExchangeAnalitics
     {
         private string _baseUri = "https://cex.io/api/";
         private string _publicKey;
@@ -136,12 +137,47 @@ namespace Temama.Trading.Exchanges.Cex
             return trades;
         }
 
+
+        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 100)
+        {
+            //var response = PostQuery(string.Format("price_stats/{0}/{1}", baseCur.ToUpper(), fundCur.ToUpper()),
+            //    new Dictionary<string, string>() {
+            //        { "lastHours", Convert.ToInt32(Math.Round((DateTime.Now - fromDate).TotalHours)).ToString()},
+            //        { "maxRespArrSize", maxResultCount.ToString() }
+            //    });
+            //Logger.Spam("Response: " + response);
+
+            var uri = _baseUri + "trade_history/" + baseCur.ToUpper() + "/" + fundCur.ToUpper();
+            var response = WebApi.Query(uri);
+
+            var ticks = new List<Tick>(maxResultCount);
+            var json = JArray.Parse(response);
+            foreach (var jTick in json)
+            {
+                var time = UnixTime.FromUnixTime(Convert.ToInt64(jTick["date"].ToString()));
+                if (time >= fromDate)
+                {
+                    ticks.Add(new Tick()
+                    {
+                        Time = time,
+                        Last = Convert.ToDouble(jTick["price"].ToString(), CultureInfo.InvariantCulture)
+                    });
+                }
+            }
+            return ticks;
+        }
+
         private string UserQuery(string path, Dictionary<string, string> args)
         {
             args["key"] = _publicKey;
             args["nonce"] = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
             args["signature"] = GenerateSignature(args["nonce"]);
 
+            return PostQuery(path, args);
+        }
+
+        private string PostQuery(string path, Dictionary<string, string> args)
+        {
             var uri = _baseUri + path;
             using (var wb = new WebClient())
             {

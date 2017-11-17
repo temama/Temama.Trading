@@ -96,6 +96,9 @@ namespace Temama.Trading.Console
                 case "ranger":
                     algo = new Ranger();
                     break;
+                case "rangerpro":
+                    algo = new RangerPro();
+                    break;
                 default:
                     throw new Exception(string.Format("Unknown Algorithm {0}", sParams["algo"]));
             }

@@ -71,12 +71,12 @@ namespace Temama.Trading.Algo
 
         protected double GetAlmolstAllFunds(double funds)
         {
-            return funds - _minFundToTrade / 2.0;
+            return funds - funds * 0.01;
         }
 
         protected double GetAlmostAllBases(double amount)
         {
-            return amount - _minBaseToTrade / 2.0;
+            return amount - amount * 0.01;
         }
 
         /// <summary>

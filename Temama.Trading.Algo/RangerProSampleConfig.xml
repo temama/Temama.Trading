@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<TemamaTradingConfig>
+  <!-- API -->
+  <PublicKey></PublicKey>
+  <SecretKey></SecretKey>
+  <UserID>up0000000</UserID> <!-- This is needed for CEX.IO -->
+  
+  <!-- Algo -->
+  <BaseCurrency>eth</BaseCurrency>
+  <FundCurrency>usd</FundCurrency>
+  <MinBaseToTrade>0.001</MinBaseToTrade>
+  <MinFundToTrade>2.5</MinFundToTrade>
+  <ExecuteInterval>30</ExecuteInterval>  <!-- Interval between bot iterations in seconds-->
+  <HoursToAnalyze>3</HoursToAnalyze>
+  <SellPercent>0.7</SellPercent>
+  <BuyPercent>0.7</BuyPercent>
+</TemamaTradingConfig>
