@@ -21,7 +21,7 @@ namespace TGNotifier
         private TelegramClient _client;
         //private
 
-        public TGNotifierClient()
+        public TGNotifierClient(string seesionId)
         {
             var config = new XmlDocument();
             config.Load(_confFile);
@@ -33,7 +33,8 @@ namespace TGNotifier
             node = config.SelectSingleNode("//TGCredentials/PhoneNumber");
             var phoneNumber = node.InnerText;
 
-            var client = new TelegramClient(apiId, apiHash);
+            var session = new FileSessionStore();
+            var client = new TelegramClient(apiId, apiHash, session, seesionId);
             var t = client.ConnectAsync();
             if (!t.Wait(_timeout) || t.Result == false)
                 throw new Exception("Connection to Telegram server failed");
@@ -82,23 +83,7 @@ namespace TGNotifier
 
         private async void SendMessage(string message)
         {
-            //await _client.SendRequestAsync<TLAbsUpdates>(
-            //       new TLRequestSendMessage()
-            //       {
-            //           Peer = new TLInputPeerUser() { UserId = _user.Id },
-            //           ReplyMarkup = new TLReplyInlineMarkup(),
-            //           Message = message,
-            //           RandomId = Helpers.GenerateRandomLong()
-            //       });
-
-            try
-            {
-                await _client.SendMessageAsync(new TLInputPeerUser() { UserId = _user.Id }, message);
-            }
-            catch (Exception ex)
-            {
-
-            }
+            await _client.SendMessageAsync(new TLInputPeerUser() { UserId = _user.Id }, message);
         }
     }
 }

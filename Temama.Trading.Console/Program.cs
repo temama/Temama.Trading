@@ -72,13 +72,14 @@ namespace Temama.Trading.Console
                 sParams.ContainsKey("configsuffix") ? sParams["configsuffix"] : string.Empty);
 
             Logger.Init(file, new LoggerConsoleEcho());
+            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
             var config = new XmlDocument();
             config.Load(file + ".xml");
 
             TGNotifierClient tgNotificator;
             try
             {
-                tgNotificator = new TGNotifierClient();
+                tgNotificator = new TGNotifierClient(string.Format("{0}_{1}_{2}{3}", sParams["algo"], sParams["exchange"], sParams["base"], sParams["fund"]));
                 NotificationManager.Init(tgNotificator);
             }
             catch (Exception ex)
@@ -124,5 +125,10 @@ namespace Temama.Trading.Console
             t.Wait();
         }
 
+        private static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
+        {
+            Logger.Critical("Unhandled exception: " + e.ExceptionObject.ToString());
+            NotificationManager.SendError("Console", "Unhandled exception: " + e.ExceptionObject.ToString());
+        }
     }
 }
