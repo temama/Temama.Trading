@@ -91,7 +91,14 @@ namespace TGNotifier
             //           RandomId = Helpers.GenerateRandomLong()
             //       });
 
-            await _client.SendMessageAsync(new TLInputPeerUser() { UserId = _user.Id }, message);
+            try
+            {
+                await _client.SendMessageAsync(new TLInputPeerUser() { UserId = _user.Id }, message);
+            }
+            catch (Exception ex)
+            {
+
+            }
         }
     }
 }
