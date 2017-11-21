@@ -130,9 +130,13 @@ namespace Temama.Trading.Algo
 
             if (funds.Values[_fund] > _minFundToTrade)
             {
-                Logger.Info("Ranger: Can place buy order...");
-                var order = _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund])), _priceToBuy);
-                NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
+                var amount = CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund]));
+                if (amount > _minBaseToTrade)
+                {
+                    Logger.Info("Ranger: Can place buy order...");
+                    var order = _api.PlaceOrder(_base, _fund, "buy", amount, _priceToBuy);
+                    NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
+                }
             }
         }
     }
