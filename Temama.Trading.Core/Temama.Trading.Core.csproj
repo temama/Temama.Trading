@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Algo\Algorithm.cs" />
     <Compile Include="Exchange\IExchangeAnalitics.cs" />
     <Compile Include="Exchange\IExchangeApi.cs" />
     <Compile Include="Exchange\Funds.cs" />
@@ -56,8 +57,11 @@
     <Compile Include="Notifications\INotificator.cs" />
     <Compile Include="Notifications\NotificationManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Reporting\HtmlReportHelper.cs" />
+    <Compile Include="Reporting\IHtmlReportGenerator.cs" />
     <Compile Include="Utils\UnixTime.cs" />
     <Compile Include="Web\WebApi.cs" />
+    <Compile Include="Web\WebServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

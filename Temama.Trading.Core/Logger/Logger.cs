@@ -7,15 +7,17 @@ namespace Temama.Trading.Core.Logger
     {
         private static object _token = new object();
         private static string _fileName = @"Logs\Temama.Trading.log";
+        private static LogSeverity _logLevel = LogSeverity.Spam;
 
         private static ILogHandler _logHandler;
 
-        public static void Init(string executableName, ILogHandler logHandler)
+        public static void Init(string executableName, ILogHandler logHandler, LogSeverity logLevel = LogSeverity.Spam)
         {
             if (!Directory.Exists("Logs"))
                 Directory.CreateDirectory("Logs");
             _fileName = string.Format("Logs\\{0}_{1}.log", executableName, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
             _logHandler = logHandler;
+            _logLevel = logLevel;
         }
 
         public static void Spam(string message)
@@ -45,6 +47,9 @@ namespace Temama.Trading.Core.Logger
 
         public static void LogMessage(LogSeverity severity, string message)
         {
+            if (severity < _logLevel)
+                return;
+
             try
             {
                 lock (_token)

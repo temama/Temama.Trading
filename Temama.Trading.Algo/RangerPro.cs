@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;

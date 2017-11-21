@@ -4,6 +4,7 @@
     {
         Spam,
         Info,
+        ImportantInfo,
         Warning,
         Error,
         Critical

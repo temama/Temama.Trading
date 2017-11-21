@@ -1,18 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Text;
 using System.Xml;
 using Temama.Trading.Algo;
+using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
+using Temama.Trading.Core.Reporting;
+using Temama.Trading.Core.Web;
 using Temama.Trading.Exchanges.Cex;
 using Temama.Trading.Exchanges.Kuna;
-using TGNotifier;
 
 namespace Temama.Trading.Console
 {
     public class Program
     {
+        private static Algorithm _algo;
+
         public class LoggerConsoleEcho : ILogHandler
         {
             private static object _token = new object();
@@ -52,7 +58,7 @@ namespace Temama.Trading.Console
         /// Format Parameter=Value Parameter2=Value2
         /// </summary>
         /// <param name="args"></param>
-        private static Dictionary<string,string> LoadArguments(string[] args)
+        private static Dictionary<string, string> LoadArguments(string[] args)
         {
             var res = new Dictionary<string, string>();
 
@@ -76,15 +82,15 @@ namespace Temama.Trading.Console
             var config = new XmlDocument();
             config.Load(file + ".xml");
 
-            TGNotifierClient tgNotificator;
+            WebServer reportServer = null;
             try
             {
-                tgNotificator = new TGNotifierClient(string.Format("{0}_{1}_{2}{3}", sParams["algo"], sParams["exchange"], sParams["base"], sParams["fund"]));
-                NotificationManager.Init(tgNotificator);
+                reportServer = new WebServer(SendReport, "http://localhost:8086/TemamaTrading/Report/");
+                reportServer.Run();
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to create TGNotifier: " + ex.Message);
+                Logger.Critical("Failed to start reporting server: " + ex.Message);
             }
 
             IExchangeApi api;
@@ -101,28 +107,39 @@ namespace Temama.Trading.Console
             }
             api.Init(config);
 
-            Algorithm algo;
             switch (sParams["algo"].ToLower())
             {
                 case "sheriff":
-                    algo = new Sheriff();
+                    _algo = new Sheriff();
                     break;
                 case "ranger":
-                    algo = new Ranger();
+                    _algo = new Ranger();
                     break;
                 case "rangerpro":
-                    algo = new RangerPro();
+                    _algo = new RangerPro();
                     break;
                 default:
                     throw new Exception(string.Format("Unknown Algorithm {0}", sParams["algo"]));
             }
-            algo.Init(api, config);
+            _algo.Init(api, config);
 
             System.Console.Title = string.Format("{0} on {1}. Config: {2}", sParams["algo"], sParams["exchange"], file);
 
             //(algo as Ranger).Test();
-            var t = algo.StartTrading();
+            var t = _algo.StartTrading();
             t.Wait();
+
+            if (reportServer != null)
+                reportServer.Stop();
+        }
+
+        private static string SendReport(HttpListenerRequest request)
+        {
+            var resp = new StringBuilder();
+            resp.Append("<HTML><BODY><h1>Temama Trading report</h1><br>");
+            resp.Append(HtmlReportHelper.ReportRunningBots(new List<Algorithm>() { _algo }));
+            resp.Append("</BODY></HTML>");
+            return resp.ToString();
         }
 
         private static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)

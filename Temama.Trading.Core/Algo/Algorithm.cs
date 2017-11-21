@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Xml;
+using Temama.Trading.Core;
 using Temama.Trading.Core.Exchange;
-using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
 
-namespace Temama.Trading.Algo
+namespace Temama.Trading.Core.Algo
 {
     public abstract class Algorithm
     {
@@ -20,7 +20,7 @@ namespace Temama.Trading.Algo
         protected DateTime _lastFiatBalanceCheckTime = DateTime.MinValue;
         protected TimeSpan _FiatBalanceCheckInterval = TimeSpan.FromMinutes(10);
         protected double _lastFiatBalance = 0;
-        
+
         protected double _minBaseToTrade;
         protected double _minFundToTrade;
 
@@ -66,7 +66,7 @@ namespace Temama.Trading.Algo
                     profit = "+" + profit;
             }
 
-            Logger.Info(string.Format("--------------- Fiat amount: {0} [{1}]-----------------", sum, profit));
+            Logger.Logger.Info(string.Format("--------------- Fiat amount: {0} [{1}]-----------------", sum, profit));
             NotificationManager.SendInfo(WhoAmI, string.Format("Fiat: {0} [{1}]", sum, profit));
 
             _lastFiatBalance = sum;
@@ -102,7 +102,7 @@ namespace Temama.Trading.Algo
             _criticalsCount++;
             if (_criticalsCount >= _maxCriticalsCount)
             {
-                Logger.Critical("Criticals count exceeded maximum. Something goes wrong. Will stop trading");
+                Logger.Logger.Critical("Criticals count exceeded maximum. Something goes wrong. Will stop trading");
                 NotificationManager.SendError(WhoAmI, "Exceeded max criticals. Stopping...");
                 StopTrading();
             }

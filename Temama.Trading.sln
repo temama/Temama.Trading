@@ -11,8 +11,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Algo", "Tema
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Exchanges", "Temama.Trading.Exchanges\Temama.Trading.Exchanges.csproj", "{8415C778-F268-4D04-90B9-C6CAA16606EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TGNotifier", "TGNotifier\TGNotifier.csproj", "{7130BF9D-A384-4B4D-8872-A097A09E5AA4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,10 +33,6 @@ Global
 		{8415C778-F268-4D04-90B9-C6CAA16606EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8415C778-F268-4D04-90B9-C6CAA16606EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8415C778-F268-4D04-90B9-C6CAA16606EB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7130BF9D-A384-4B4D-8872-A097A09E5AA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7130BF9D-A384-4B4D-8872-A097A09E5AA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7130BF9D-A384-4B4D-8872-A097A09E5AA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7130BF9D-A384-4B4D-8872-A097A09E5AA4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
