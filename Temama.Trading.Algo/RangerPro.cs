@@ -25,6 +25,13 @@ namespace Temama.Trading.Algo
         private DateTime _lastRangeCorrectionTime = DateTime.MinValue;
         private TimeSpan _rangeCorrectionInterval = TimeSpan.FromMinutes(30);
 
+        private bool _allowSellCancel = false;
+        private int _sellCancelHours = 0;
+        private double _sellCancelDistancePercent = 0.0;
+        private bool _allowBuyCancel = false;
+        private int _buyCancelHours = 0;
+        private double _buyCancelDistancePercent = 0.0;
+
         public override string Name()
         {
             return "RangerPRO";
@@ -58,6 +65,19 @@ namespace Temama.Trading.Algo
             _percentToSell = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
             node = config.SelectSingleNode("//TemamaTradingConfig/BuyPercent");
             _percentToBuy = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
+
+            node = config.SelectSingleNode("//TemamaTradingConfig/AllowSellCancel");
+            _allowSellCancel = Convert.ToBoolean(node.InnerText);
+            node = config.SelectSingleNode("//TemamaTradingConfig/SellCancelHours");
+            _sellCancelHours = Convert.ToInt32(node.InnerText);
+            node = config.SelectSingleNode("//TemamaTradingConfig/SellCancelDistancePercent");
+            _sellCancelDistancePercent = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
+            node = config.SelectSingleNode("//TemamaTradingConfig/AllowBuyCancel");
+            _allowBuyCancel = Convert.ToBoolean(node.InnerText);
+            node = config.SelectSingleNode("//TemamaTradingConfig/BuyCancelHours");
+            _buyCancelHours = Convert.ToInt32(node.InnerText);
+            node = config.SelectSingleNode("//TemamaTradingConfig/BuyCancelDistancePercent");
+            _buyCancelDistancePercent = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
 
             _pair = _base + "/" + _fund;
         }
@@ -104,7 +124,9 @@ namespace Temama.Trading.Algo
             {
                 if (DateTime.Now - _lastRangeCorrectionTime > _rangeCorrectionInterval)
                 {
-                    CorrectRange();
+                    var stats = _analitics.GetRecentPrices(_base, _fund, DateTime.UtcNow.AddHours(-1 * _hoursToAnalyze));
+                    CorrectRange(stats);
+                    CancelFarAwayOrders(stats);
                     _lastRangeCorrectionTime = DateTime.Now;
                 }
 
@@ -139,11 +161,10 @@ namespace Temama.Trading.Algo
             }
         }
 
-        private void CorrectRange()
+        private void CorrectRange(List<Tick> stats)
         {
             Logger.Info("RangerPro: Range correction...");
 
-            var stats = _analitics.GetRecentPrices(_base, _fund, DateTime.UtcNow.AddHours(-1 * _hoursToAnalyze));
             stats.Sort(SortTickAscByDateTime);
             var count = stats.Count;
             var minPrice = double.MaxValue;
@@ -191,7 +212,7 @@ namespace Temama.Trading.Algo
                 }
             }
         }
-
+        
         private int SortTickAscByDateTime(Tick first, Tick second)
         {
             if (first.Time < second.Time)
@@ -220,6 +241,68 @@ namespace Temama.Trading.Algo
                     Logger.Info("RangerPro: Can place buy order...");
                     var order = _api.PlaceOrder(_base, _fund, "buy", amount, _priceToBuy);
                     NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
+                }
+            }
+        }
+
+        private void CancelFarAwayOrders(List<Tick> stats)
+        {
+            var orders = _api.GetMyOrders(_base, _fund);
+            var last = _api.GetLastPrice(_base, _fund);
+
+            if (_allowSellCancel)
+            {
+                foreach (var order in orders)
+                {
+                    if (order.Side == "sell" &&
+                        (DateTime.Now - order.CreatedAt).TotalHours > _sellCancelHours)
+                    {
+                        var needToCancel = true;
+                        var allowedPrice = order.Price - order.Price * _sellCancelDistancePercent;
+
+                        foreach(var tick in stats)
+                        {
+                            if (tick.Last > allowedPrice)
+                            {
+                                needToCancel = false;
+                                break;
+                            }
+                        }
+
+                        if (needToCancel)
+                        {
+                            Logger.Important(string.Format("Cancel order as far away: {0}", order));
+                            _api.CancellOrder(order);
+                        }
+                    }
+                }
+            }
+
+            if (_allowBuyCancel)
+            {
+                foreach (var order in orders)
+                {
+                    if (order.Side == "buy" &&
+                        (DateTime.Now - order.CreatedAt).TotalHours > _buyCancelHours)
+                    {
+                        var needToCancel = true;
+                        var allowedPrice = order.Price + order.Price * _buyCancelDistancePercent;
+
+                        foreach (var tick in stats)
+                        {
+                            if (tick.Last < allowedPrice)
+                            {
+                                needToCancel = false;
+                                break;
+                            }
+                        }
+
+                        if (needToCancel)
+                        {
+                            Logger.Important(string.Format("Cancel order as far away: {0}", order));
+                            _api.CancellOrder(order);
+                        }
+                    }
                 }
             }
         }

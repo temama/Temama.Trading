@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading;
 using System.Linq;
 using System.Text;
+using System.Net.Sockets;
 
 namespace Temama.Trading.Core.Web
 {
@@ -11,7 +12,7 @@ namespace Temama.Trading.Core.Web
         private readonly HttpListener _listener = new HttpListener();
         private readonly Func<HttpListenerRequest, string> _responderMethod;
 
-        public WebServer(string[] prefixes, Func<HttpListenerRequest, string> method)
+        public WebServer(int port, string[] prefixes, Func<HttpListenerRequest, string> method)
         {
             if (!HttpListener.IsSupported)
                 throw new NotSupportedException(
@@ -26,15 +27,32 @@ namespace Temama.Trading.Core.Web
             if (method == null)
                 throw new ArgumentException("method");
 
+            var ipAddr = "127.0.0.1";
+            if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
+            {
+                var addr = Dns.GetHostEntry(Dns.GetHostName()).AddressList
+                    .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork);
+                if (addr != null)
+                {
+                    ipAddr = addr.ToString();
+                }
+            }
+
+
             foreach (string s in prefixes)
-                _listener.Prefixes.Add(s);
+            {
+                _listener.Prefixes.Add(string.Format("http://{0}:{1}{2}", System.Environment.MachineName, port, s));
+                _listener.Prefixes.Add(string.Format("http://localhost:{0}{1}", port, s));
+                _listener.Prefixes.Add(string.Format("http://{0}:{1}{2}", ipAddr, port, s));
+                _listener.Prefixes.Add(string.Format("http://*:{0}{1}", port, s));
+            }
 
             _responderMethod = method;
             _listener.Start();
         }
 
-        public WebServer(Func<HttpListenerRequest, string> method, params string[] prefixes)
-            : this(prefixes, method) { }
+        public WebServer(Func<HttpListenerRequest, string> method, int port, params string[] prefixes)
+            : this(port, prefixes, method) { }
 
         public void Run()
         {

@@ -14,4 +14,13 @@
   <HoursToAnalyze>3</HoursToAnalyze>
   <SellPercent>0.7</SellPercent>
   <BuyPercent>0.7</BuyPercent>
+
+  <AllowSellCancel>True</AllowSellCancel> <!-- Allow cancel sell order if price was "far away" for long time -->
+  <SellCancelHours>72</SellCancelHours>
+  <SellCancelDistancePercent>10</SellCancelDistancePercent>
+
+  <AllowBuyCancel>True</AllowBuyCancel> <!-- Allow cancel buy order if price was "far away" for long time -->
+  <BuyCancelHours>24</BuyCancelHours>
+  <BuyCancelDistancePercent>5</BuyCancelDistancePercent>
+
 </TemamaTradingConfig>

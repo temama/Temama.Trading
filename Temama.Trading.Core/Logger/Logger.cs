@@ -30,6 +30,11 @@ namespace Temama.Trading.Core.Logger
             LogMessage(LogSeverity.Info, message);
         }
 
+        public static void Important(string message)
+        {
+            LogMessage(LogSeverity.ImportantInfo, message);
+        }
+
         public static void Warning(string message)
         {
             LogMessage(LogSeverity.Warning, message);
@@ -84,6 +89,8 @@ namespace Temama.Trading.Core.Logger
                     return "ERROR";
                 case LogSeverity.Critical:
                     return "CRITICAL";
+                case LogSeverity.ImportantInfo:
+                    return "IMPORTANT";
                 default:
                     return "UNKNOWN";
             }
@@ -103,6 +110,8 @@ namespace Temama.Trading.Core.Logger
                     return "ERROR   ";
                 case LogSeverity.Critical:
                     return "CRITICAL";
+                case LogSeverity.ImportantInfo:
+                    return "!!INFO!!";
                 default:
                     return "UNKNOWN ";
             }

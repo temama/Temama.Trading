@@ -74,22 +74,22 @@ namespace Temama.Trading.Core.Algo
             return sum;
         }
 
-        protected double CalculateBuyVolume(double price, double fund)
+        protected virtual double CalculateBuyVolume(double price, double fund)
         {
             return Math.Round(Math.Floor(fund) / price, 5);
         }
 
-        protected double GetRoundedSellVolume(double vol)
+        protected virtual double GetRoundedSellVolume(double vol)
         {
             return Math.Round(vol, 5);
         }
 
-        protected double GetAlmolstAllFunds(double funds)
+        protected virtual double GetAlmolstAllFunds(double funds)
         {
             return funds - funds * 0.01;
         }
 
-        protected double GetAlmostAllBases(double amount)
+        protected virtual double GetAlmostAllBases(double amount)
         {
             return amount - amount * 0.01;
         }

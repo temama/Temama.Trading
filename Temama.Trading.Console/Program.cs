@@ -42,6 +42,9 @@ namespace Temama.Trading.Console
                         case LogSeverity.Warning:
                             System.Console.ForegroundColor = ConsoleColor.DarkYellow;
                             break;
+                        case LogSeverity.ImportantInfo:
+                            System.Console.ForegroundColor = ConsoleColor.White;
+                            break;
                         default:
                             System.Console.ForegroundColor = ConsoleColor.Gray;
                             break;
@@ -85,7 +88,7 @@ namespace Temama.Trading.Console
             WebServer reportServer = null;
             try
             {
-                reportServer = new WebServer(SendReport, "http://localhost:8086/TemamaTrading/Report/");
+                reportServer = new WebServer(SendReport, 8877, "/TemamaTrading/Report/");
                 reportServer.Run();
             }
             catch (Exception ex)
@@ -124,8 +127,7 @@ namespace Temama.Trading.Console
             _algo.Init(api, config);
 
             System.Console.Title = string.Format("{0} on {1}. Config: {2}", sParams["algo"], sParams["exchange"], file);
-
-            //(algo as Ranger).Test();
+            
             var t = _algo.StartTrading();
             t.Wait();
 
@@ -136,7 +138,7 @@ namespace Temama.Trading.Console
         private static string SendReport(HttpListenerRequest request)
         {
             var resp = new StringBuilder();
-            resp.Append("<HTML><BODY><h1>Temama Trading report</h1><br>");
+            resp.Append("<HTML><BODY><h1>Temama Trading</h1><br>");
             resp.Append(HtmlReportHelper.ReportRunningBots(new List<Algorithm>() { _algo }));
             resp.Append("</BODY></HTML>");
             return resp.ToString();
