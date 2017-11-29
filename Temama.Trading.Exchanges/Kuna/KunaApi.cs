@@ -16,7 +16,7 @@ using Temama.Trading.Core.Web;
 
 namespace Temama.Trading.Exchanges.Kuna
 {
-    public class KunaApi : IExchangeApi
+    public class KunaApi : IExchangeApi, IExchangeAnalitics
     {
         private string _baseUri = "https://kuna.io/api/v2/";
         private string _publicKey;
@@ -131,6 +131,28 @@ namespace Temama.Trading.Exchanges.Kuna
             return trades;
         }
         
+        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 100)
+        {
+            var uri = _baseUri + "trades?market=" + baseCur.ToLower() + fundCur.ToLower();
+            var response = WebApi.Query(uri);
+
+            var ticks = new List<Tick>(maxResultCount);
+            var json = JArray.Parse(response);
+            foreach (var jTick in json)
+            {
+                var time = DateTime.Parse((jTick["created_at"] as JValue).Value.ToString());
+                if (time >= fromDate)
+                {
+                    ticks.Add(new Tick()
+                    {
+                        Time = time,
+                        Last = Convert.ToDouble(jTick["price"].ToString(), CultureInfo.InvariantCulture)
+                    });
+                }
+            }
+            return ticks;
+        }
+
         /// <summary>
         /// Executes user queries (which require impersonalisation)
         /// </summary>
@@ -183,6 +205,5 @@ namespace Temama.Trading.Exchanges.Kuna
             return string.Join("&", dict.Select(kvp =>
                  string.Format("{0}={1}", kvp.Key, escape ? HttpUtility.UrlEncode(kvp.Value) : kvp.Value)));
         }
-
     }
 }
