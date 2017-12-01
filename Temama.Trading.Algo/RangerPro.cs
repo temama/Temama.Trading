@@ -26,10 +26,10 @@ namespace Temama.Trading.Algo
         private TimeSpan _rangeCorrectionInterval = TimeSpan.FromMinutes(30);
 
         private bool _allowSellCancel = false;
-        private int _sellCancelHours = 0;
+        private double _sellCancelHours = 0;
         private double _sellCancelDistancePercent = 0.0;
         private bool _allowBuyCancel = false;
-        private int _buyCancelHours = 0;
+        private double _buyCancelHours = 0;
         private double _buyCancelDistancePercent = 0.0;
 
         public override string Name()
@@ -61,6 +61,8 @@ namespace Temama.Trading.Algo
             _interval = Convert.ToInt32(node.InnerText);
             node = config.SelectSingleNode("//TemamaTradingConfig/HoursToAnalyze");
             _hoursToAnalyze = Convert.ToInt32(node.InnerText, CultureInfo.InvariantCulture);
+            node = config.SelectSingleNode("//TemamaTradingConfig/RangeCorrectionInterval");
+            _rangeCorrectionInterval = TimeSpan.FromSeconds(Convert.ToInt32(node.InnerText));
             node = config.SelectSingleNode("//TemamaTradingConfig/SellPercent");
             _percentToSell = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
             node = config.SelectSingleNode("//TemamaTradingConfig/BuyPercent");
@@ -69,13 +71,13 @@ namespace Temama.Trading.Algo
             node = config.SelectSingleNode("//TemamaTradingConfig/AllowSellCancel");
             _allowSellCancel = Convert.ToBoolean(node.InnerText);
             node = config.SelectSingleNode("//TemamaTradingConfig/SellCancelHours");
-            _sellCancelHours = Convert.ToInt32(node.InnerText);
+            _sellCancelHours = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture);
             node = config.SelectSingleNode("//TemamaTradingConfig/SellCancelDistancePercent");
             _sellCancelDistancePercent = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
             node = config.SelectSingleNode("//TemamaTradingConfig/AllowBuyCancel");
             _allowBuyCancel = Convert.ToBoolean(node.InnerText);
             node = config.SelectSingleNode("//TemamaTradingConfig/BuyCancelHours");
-            _buyCancelHours = Convert.ToInt32(node.InnerText);
+            _buyCancelHours = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture);
             node = config.SelectSingleNode("//TemamaTradingConfig/BuyCancelDistancePercent");
             _buyCancelDistancePercent = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
 
