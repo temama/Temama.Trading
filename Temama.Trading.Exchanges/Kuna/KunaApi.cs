@@ -83,7 +83,7 @@ namespace Temama.Trading.Exchanges.Kuna
             // Response of placing order is order JSON
             // Checking if query was successfull by trying to parse response as order
             var resp = KunaOrder.FromJson(JObject.Parse(response));
-            Logger.Warning(string.Format("KUNA: Order {0} placed", resp));
+            Logger.Important(string.Format("KUNA: Order {0} placed", resp));
             return resp;
         }
 

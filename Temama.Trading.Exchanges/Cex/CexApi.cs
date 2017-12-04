@@ -89,7 +89,7 @@ namespace Temama.Trading.Exchanges.Cex
             // Checking if query was successfull by trying to parse response as order
             var resp = CexOrder.FromJson(JObject.Parse(response));
             resp.Pair = baseCur.ToUpper() + fundCur.ToUpper();
-            Logger.Warning(string.Format("CEX.IO: Order {0} placed", resp));
+            Logger.Important(string.Format("CEX.IO: Order {0} placed", resp));
             return resp;
         }
 
