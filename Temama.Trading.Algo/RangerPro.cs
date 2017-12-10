@@ -24,6 +24,7 @@ namespace Temama.Trading.Algo
         private IExchangeAnalitics _analitics;
         private DateTime _lastRangeCorrectionTime = DateTime.MinValue;
         private TimeSpan _rangeCorrectionInterval = TimeSpan.FromMinutes(30);
+        private bool _correctRangeEachTrade = true;
 
         private bool _allowSellCancel = false;
         private double _sellCancelHours = 0;
@@ -231,6 +232,13 @@ namespace Temama.Trading.Algo
             if (funds.Values[_base] > _minBaseToTrade)
             {
                 Logger.Info("RangerPro: Can place sell order...");
+                
+                if (_correctRangeEachTrade)
+                {
+                    var stats = _analitics.GetRecentPrices(_base, _fund, DateTime.UtcNow.AddHours(-1 * _hoursToAnalyze));
+                    CorrectRange(stats);
+                }
+
                 var order = _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), _priceToSell);
                 NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
             }
@@ -241,6 +249,13 @@ namespace Temama.Trading.Algo
                 if (amount > _minBaseToTrade)
                 {
                     Logger.Info("RangerPro: Can place buy order...");
+
+                    if (_correctRangeEachTrade)
+                    {
+                        var stats = _analitics.GetRecentPrices(_base, _fund, DateTime.UtcNow.AddHours(-1 * _hoursToAnalyze));
+                        CorrectRange(stats);
+                    }
+
                     var order = _api.PlaceOrder(_base, _fund, "buy", amount, _priceToBuy);
                     NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
                 }
