@@ -24,7 +24,7 @@ namespace Temama.Trading.Algo
         private IExchangeAnalitics _analitics;
         private DateTime _lastRangeCorrectionTime = DateTime.MinValue;
         private TimeSpan _rangeCorrectionInterval = TimeSpan.FromMinutes(30);
-        private bool _correctRangeEachTrade = true;
+        private bool _correctRangeEachTrade = false;
 
         private bool _allowSellCancel = false;
         private double _sellCancelHours = 0;
@@ -63,7 +63,10 @@ namespace Temama.Trading.Algo
             node = config.SelectSingleNode("//TemamaTradingConfig/HoursToAnalyze");
             _hoursToAnalyze = Convert.ToInt32(node.InnerText, CultureInfo.InvariantCulture);
             node = config.SelectSingleNode("//TemamaTradingConfig/RangeCorrectionInterval");
-            _rangeCorrectionInterval = TimeSpan.FromSeconds(Convert.ToInt32(node.InnerText));
+            if (node.InnerText.ToLower() == "attrade")
+                _correctRangeEachTrade = true;
+            else
+                _rangeCorrectionInterval = TimeSpan.FromSeconds(Convert.ToInt32(node.InnerText));
             node = config.SelectSingleNode("//TemamaTradingConfig/SellPercent");
             _percentToSell = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
             node = config.SelectSingleNode("//TemamaTradingConfig/BuyPercent");

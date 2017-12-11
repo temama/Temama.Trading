@@ -12,7 +12,7 @@
   <MinFundToTrade>2.5</MinFundToTrade>
   <ExecuteInterval>30</ExecuteInterval>  <!-- Interval between bot iterations in seconds-->
   <HoursToAnalyze>3</HoursToAnalyze>
-  <RangeCorrectionInterval>600</RangeCorrectionInterval>  <!-- Interval between range corrections in seconds-->
+  <RangeCorrectionInterval>600</RangeCorrectionInterval>  <!-- "AtTrade" or Interval between range corrections in seconds-->
   <SellPercent>0.7</SellPercent>
   <BuyPercent>0.7</BuyPercent>
 
