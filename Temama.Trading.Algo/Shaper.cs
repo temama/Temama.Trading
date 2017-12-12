@@ -150,62 +150,17 @@ namespace Temama.Trading.Algo
             var res = "";
             var firstTime = DateTime.UtcNow.AddHours(_utcOffset).AddSeconds(-1 * _candleTime * (_candlesToAnalize + 1));
             var stats = _analitics.GetRecentPrices(_base, _fund, firstTime);
-            stats.Sort(SortTickAscByDateTime);
-
-            if (stats.Count == 0)
-                return string.Empty;
-
-            var nextTime = firstTime.Date;
-            while (nextTime < stats[0].Time)
+            var candles = CandlestickHelper.TicksToCandles(stats, TimeSpan.FromSeconds(_candleTime));
+            foreach (var candle in candles)
             {
-                if (nextTime > firstTime)
-                    res += "?";
-                nextTime = nextTime.AddSeconds(_candleTime);
-            }
-            
-            var open = stats[0].Last;
-            Logger.Info(string.Format("O:{0}\t{1}", stats[0].Last, stats[0].Time));
-            var close = 0.0;
-            for (int i = 0; i < stats.Count - 1; i++)
-            {                
-                if (stats[i + 1].Time > nextTime)
-                {
-                    close = stats[i].Last;
-                    Logger.Info(string.Format("C:{0}\t{1}", stats[i].Last, stats[i].Time));
-                    var diff = (close - open) / ((open + close) / 2) * 100;
-                    if (Math.Abs(diff) <= _zeroDiff)
-                        res += "_";
-                    else
-                        res += diff > 0 ? "/" : "\\";
-
-                    open = stats[i + 1].Last;
-                    Logger.Info(string.Format("O:{0}\t{1}", stats[i+1].Last, stats[i+1].Time));
-                    nextTime = nextTime.AddSeconds(_candleTime);
-                }
-
-                if ((stats[i + 1].Time - stats[i].Time).TotalSeconds > _candleTime)
-                {
-                    while (nextTime < stats[i + 1].Time)
-                    {
-                        res += "_";
-                        nextTime = nextTime.AddSeconds(_candleTime);
-                    }
-                }
-            }
-
-            // if currently is second half of candle (nextTime - current time <= 0.5 * _candleTime
-            // add figure to shape
-            if ((nextTime - DateTime.UtcNow.AddHours(_utcOffset)).TotalSeconds <= 0.5 * _candleTime)
-            {
-                close = stats[stats.Count - 1].Last;
-                Logger.Info(string.Format("C:{0}\t{1}", stats[stats.Count - 1].Last, stats[stats.Count - 1].Time));
-                var diff = (close - open) / ((open + close) / 2) * 100;
+                Logger.Info(candle.ToString());
+                var diff = candle.Body;
                 if (Math.Abs(diff) <= _zeroDiff)
                     res += "_";
                 else
                     res += diff > 0 ? "/" : "\\";
             }
-
+            
             return res;
         }
 

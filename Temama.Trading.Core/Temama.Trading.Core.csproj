@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Algo\Algorithm.cs" />
     <Compile Include="Algo\Candlestick.cs" />
+    <Compile Include="Algo\CandlestickHelper.cs" />
     <Compile Include="Exchange\IExchangeAnalitics.cs" />
     <Compile Include="Exchange\IExchangeApi.cs" />
     <Compile Include="Exchange\Funds.cs" />
