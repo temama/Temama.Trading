@@ -15,6 +15,19 @@ namespace Temama.Trading.Core.Exchange
         public double Volume { get; set; }
         public DateTime CreatedAt { get; set; }
 
+        public Order Clone()
+        {
+            return new Order()
+            {
+                Id = this.Id,
+                CreatedAt = this.CreatedAt,
+                Pair = this.Pair,
+                Price = this.Price,
+                Side = this.Side,
+                Volume = this.Volume
+            };
+        }
+
         public static int SortByPrice(Order first, Order second)
         {
             if (first.Price < second.Price)

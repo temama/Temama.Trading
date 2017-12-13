@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Algo", "Tema
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Exchanges", "Temama.Trading.Exchanges\Temama.Trading.Exchanges.csproj", "{8415C778-F268-4D04-90B9-C6CAA16606EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Emulator", "Temama.Trading.Emulator\Temama.Trading.Emulator.csproj", "{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,22 @@ Global
 		{8415C778-F268-4D04-90B9-C6CAA16606EB}.Release|x64.Build.0 = Release|Any CPU
 		{8415C778-F268-4D04-90B9-C6CAA16606EB}.Release|x86.ActiveCfg = Release|Any CPU
 		{8415C778-F268-4D04-90B9-C6CAA16606EB}.Release|x86.Build.0 = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|ARM.Build.0 = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|x64.Build.0 = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Debug|x86.Build.0 = Debug|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|ARM.ActiveCfg = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|ARM.Build.0 = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|x64.ActiveCfg = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|x64.Build.0 = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|x86.ActiveCfg = Release|Any CPU
+		{662D5848-0D3F-4671-BC00-A1DDF4F4F95F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -49,6 +49,7 @@
     <Compile Include="Cex\CexOrder.cs" />
     <Compile Include="Cex\CexOrderBook.cs" />
     <Compile Include="Cex\CexTrade.cs" />
+    <Compile Include="Emu\EmuApi.cs" />
     <Compile Include="Kuna\KunaApi.cs" />
     <Compile Include="Kuna\KunaFunds.cs" />
     <Compile Include="Kuna\KunaOrder.cs" />

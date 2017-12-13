@@ -47,6 +47,8 @@ namespace Temama.Trading.Core.Algo
 
         public abstract void StopTrading();
 
+        public abstract void Emulate(DateTime start, DateTime end);
+
         protected double CheckFiatBalance(double last, List<Order> myOrders)
         {
             var funds = _api.GetFunds(_base, _fund);

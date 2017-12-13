@@ -107,7 +107,7 @@ namespace Temama.Trading.Algo
                 Trading = true;
                 while (Trading)
                 {
-                    DoTradingIteration();
+                    DoTradingIteration(DateTime.Now);
                     Thread.Sleep(_interval * 1000);
                 }
             });
@@ -123,22 +123,36 @@ namespace Temama.Trading.Algo
                 _tradingTask.Wait();
             _tradingTask = null;
         }
+        
+        public override void Emulate(DateTime start, DateTime end)
+        {
+            var emu = _api as IExchangeEmulator;
+            var currTime = start;
+            emu.SetIterationTime(currTime);
+            Trading = true;
+            while (currTime<=end)
+            {
+                emu.SetIterationTime(currTime);
+                DoTradingIteration(currTime);
+                currTime = currTime.AddSeconds(_interval);
+            }
+        }
 
-        private void DoTradingIteration()
+        private void DoTradingIteration(DateTime iterationTime)
         {
             try
             {
-                if (DateTime.Now - _lastRangeCorrectionTime > _rangeCorrectionInterval)
+                if (iterationTime - _lastRangeCorrectionTime > _rangeCorrectionInterval)
                 {
-                    var stats = _analitics.GetRecentPrices(_base, _fund, DateTime.UtcNow.AddHours(-1 * _hoursToAnalyze));
-                    CorrectRange(stats);
-                    CancelFarAwayOrders(stats);
-                    _lastRangeCorrectionTime = DateTime.Now;
+                    var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
+                    CorrectRange(stats, iterationTime);
+                    CancelFarAwayOrders(stats, iterationTime);
+                    _lastRangeCorrectionTime = iterationTime;
                 }
 
-                PrintSummary();
+                PrintSummary(iterationTime);
                 
-                MakeDecision();
+                MakeDecision(iterationTime);
             }
             catch (Exception ex)
             {
@@ -147,7 +161,7 @@ namespace Temama.Trading.Algo
             }
         }
 
-        private void PrintSummary()
+        private void PrintSummary(DateTime iterationTime)
         {
             var last = _api.GetLastPrice(_base, _fund);
             Logger.Info(string.Format("Last price: {0}", last));
@@ -161,13 +175,13 @@ namespace Temama.Trading.Algo
             }
             Logger.Info(string.Format("{0} active orders: {1}", myOrders.Count, sbOrders));
 
-            if (DateTime.Now - _lastFiatBalanceCheckTime > _FiatBalanceCheckInterval)
+            if (iterationTime - _lastFiatBalanceCheckTime > _FiatBalanceCheckInterval)
             {
                 CheckFiatBalance(last, myOrders);
             }
         }
 
-        private void CorrectRange(List<Tick> stats)
+        private void CorrectRange(List<Tick> stats, DateTime iterationTime)
         {
             Logger.Info("RangerPro: Range correction...");
 
@@ -205,7 +219,7 @@ namespace Temama.Trading.Algo
             var orders = _api.GetMyOrders(_base, _fund);
             foreach (var ord in orders)
             {
-                if ((DateTime.Now - ord.CreatedAt).TotalHours >= _hoursToAnalyze)
+                if ((iterationTime - ord.CreatedAt).TotalHours >= _hoursToAnalyze)
                 {
                     var closest = double.MaxValue;
                     foreach (var tick in stats)
@@ -228,7 +242,7 @@ namespace Temama.Trading.Algo
             else return 0;
         }
 
-        private void MakeDecision()
+        private void MakeDecision(DateTime iterationTime)
         {
             var funds = _api.GetFunds(_base, _fund);
 
@@ -238,8 +252,8 @@ namespace Temama.Trading.Algo
                 
                 if (_correctRangeEachTrade)
                 {
-                    var stats = _analitics.GetRecentPrices(_base, _fund, DateTime.UtcNow.AddHours(-1 * _hoursToAnalyze));
-                    CorrectRange(stats);
+                    var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
+                    CorrectRange(stats, iterationTime);
                 }
 
                 var order = _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), _priceToSell);
@@ -255,8 +269,8 @@ namespace Temama.Trading.Algo
 
                     if (_correctRangeEachTrade)
                     {
-                        var stats = _analitics.GetRecentPrices(_base, _fund, DateTime.UtcNow.AddHours(-1 * _hoursToAnalyze));
-                        CorrectRange(stats);
+                        var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
+                        CorrectRange(stats, iterationTime);
                     }
 
                     var order = _api.PlaceOrder(_base, _fund, "buy", amount, _priceToBuy);
@@ -265,7 +279,7 @@ namespace Temama.Trading.Algo
             }
         }
 
-        private void CancelFarAwayOrders(List<Tick> stats)
+        private void CancelFarAwayOrders(List<Tick> stats, DateTime iterationTime)
         {
             var orders = _api.GetMyOrders(_base, _fund);
             var last = _api.GetLastPrice(_base, _fund);
@@ -275,7 +289,7 @@ namespace Temama.Trading.Algo
                 foreach (var order in orders)
                 {
                     if (order.Side == "sell" &&
-                        (DateTime.Now - order.CreatedAt).TotalHours > _sellCancelHours)
+                        (iterationTime - order.CreatedAt).TotalHours > _sellCancelHours)
                     {
                         var needToCancel = true;
                         var allowedPrice = order.Price - order.Price * _sellCancelDistancePercent;
@@ -303,7 +317,7 @@ namespace Temama.Trading.Algo
                 foreach (var order in orders)
                 {
                     if (order.Side == "buy" &&
-                        (DateTime.Now - order.CreatedAt).TotalHours > _buyCancelHours)
+                        (iterationTime - order.CreatedAt).TotalHours > _buyCancelHours)
                     {
                         var needToCancel = true;
                         var allowedPrice = order.Price + order.Price * _buyCancelDistancePercent;
@@ -326,6 +340,5 @@ namespace Temama.Trading.Algo
                 }
             }
         }
-
     }
 }

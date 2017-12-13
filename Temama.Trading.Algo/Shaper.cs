@@ -172,5 +172,10 @@ namespace Temama.Trading.Algo
                 return 1;
             else return 0;
         }
+
+        public override void Emulate(DateTime start, DateTime end)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

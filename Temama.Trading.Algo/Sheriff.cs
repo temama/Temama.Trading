@@ -451,5 +451,10 @@ namespace Temama.Trading.Algo
             _api.CancellOrder(buyOrder);
             return false;
         }
+
+        public override void Emulate(DateTime start, DateTime end)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
