@@ -138,7 +138,7 @@ namespace Temama.Trading.Exchanges.Cex
         }
 
 
-        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 100)
+        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 1000)
         {
             //var response = PostQuery(string.Format("price_stats/{0}/{1}", baseCur.ToUpper(), fundCur.ToUpper()),
             //    new Dictionary<string, string>() {

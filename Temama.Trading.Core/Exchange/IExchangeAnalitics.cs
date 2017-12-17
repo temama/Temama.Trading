@@ -8,6 +8,6 @@ namespace Temama.Trading.Core.Exchange
 {
     public interface IExchangeAnalitics
     {
-        List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 100);
+        List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 1000);
     }
 }

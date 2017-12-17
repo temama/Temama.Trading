@@ -132,6 +132,7 @@ namespace Temama.Trading.Algo
             Trading = true;
             while (currTime<=end)
             {
+                Logger.Info("RangerPro.Emulation: Iter Time: " + currTime);
                 emu.SetIterationTime(currTime);
                 DoTradingIteration(currTime);
                 currTime = currTime.AddSeconds(_interval);
@@ -178,6 +179,7 @@ namespace Temama.Trading.Algo
             if (iterationTime - _lastFiatBalanceCheckTime > _FiatBalanceCheckInterval)
             {
                 CheckFiatBalance(last, myOrders);
+                _lastFiatBalanceCheckTime = iterationTime;
             }
         }
 

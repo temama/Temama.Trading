@@ -194,20 +194,22 @@ namespace Temama.Trading.Exchanges.Emu
             return book;
         }
 
-        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 100)
+        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 1000)
         {
             SetBaseFund(baseCur, fundCur);
             var res = new List<Tick>();
-            foreach (var t in _ticks)
+            for (int i = _currentTick; i > _currentTick - maxResultCount; i--)
             {
-                if (t.Time >= fromDate &&
-                    t.Time <= _lastTime)
-                    res.Add(new Tick()
-                    {
-                        Time = t.Time,
-                        Last = t.Last
-                    });
+                var t = _ticks[i];
+                if (i <= 0 || t.Time < fromDate)
+                    break;
+                res.Add(new Tick()
+                {
+                    Time = t.Time,
+                    Last = t.Last
+                });
             }
+
             return res;
         }
 
