@@ -107,7 +107,7 @@ namespace Temama.Trading.Algo
                 Trading = true;
                 while (Trading)
                 {
-                    DoTradingIteration(DateTime.Now);
+                    DoTradingIteration(DateTime.UtcNow);
                     Thread.Sleep(_interval * 1000);
                 }
             });
