@@ -103,7 +103,7 @@ namespace Temama.Trading.Exchanges.Emu
             }
             else
             {
-                _userFunds.Values[_base] += userOrder.Price * userOrder.Volume;
+                _userFunds.Values[_base] += userOrder.Volume;
             }
             _userOrders.Remove(userOrder);
             Logger.Warning("EmuApi.CancellOrder: Order cancelled: " + userOrder.ToString());
@@ -226,10 +226,10 @@ namespace Temama.Trading.Exchanges.Emu
 
             if (side == "sell")
             {
-                if (_userFunds.Values[baseCur] < price * volume)
+                if (_userFunds.Values[baseCur] < volume)
                     throw new Exception("EmuApi.PlaceOrder: Not enough " + baseCur + " to place order");
                 else
-                    _userFunds.Values[baseCur] -= price * volume;
+                    _userFunds.Values[baseCur] -= volume;
             }
 
             var res = new Order()
@@ -288,7 +288,7 @@ namespace Temama.Trading.Exchanges.Emu
             double amount;
             if (order.Side == "buy")
             {
-                amount = order.Price * order.Volume;
+                amount = order.Volume;
                 amount -= amount * _buyFee;
                 _userFunds.Values[_base] += amount;
             }
@@ -323,7 +323,7 @@ namespace Temama.Trading.Exchanges.Emu
                 _ticks.Add(new Tick()
                 {
                     Time = DateTime.Parse((jLine["Time"] as JValue).Value.ToString()),
-                    Last = Convert.ToDouble((jLine["Last"] as JValue).Value.ToString(), CultureInfo.InvariantCulture)
+                    Last = Convert.ToDouble((jLine["Last"] as JValue).Value, CultureInfo.InvariantCulture)
                 });
             }
 

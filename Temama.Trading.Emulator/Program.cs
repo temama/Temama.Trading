@@ -58,7 +58,7 @@ namespace Temama.Trading.Emulator
             Logger.Init("Temama.Trading.Emulator", new LoggerConsoleEcho());
             System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
             var config = new XmlDocument();
-            config.Load("EmulatorConfig.xml");
+            config.Load("EmulatorConfig_CexEthUsd.xml");
 
             var api = new EmuApi();
             api.Init(config);

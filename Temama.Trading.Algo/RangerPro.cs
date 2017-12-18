@@ -123,14 +123,14 @@ namespace Temama.Trading.Algo
                 _tradingTask.Wait();
             _tradingTask = null;
         }
-        
+
         public override void Emulate(DateTime start, DateTime end)
         {
             var emu = _api as IExchangeEmulator;
             var currTime = start;
             emu.SetIterationTime(currTime);
             Trading = true;
-            while (currTime<=end)
+            while (currTime <= end && Trading)
             {
                 Logger.Info("RangerPro.Emulation: Iter Time: " + currTime);
                 emu.SetIterationTime(currTime);
@@ -264,16 +264,16 @@ namespace Temama.Trading.Algo
 
             if (funds.Values[_fund] > _minFundToTrade)
             {
+                if (_correctRangeEachTrade)
+                {
+                    var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
+                    CorrectRange(stats, iterationTime);
+                }
+
                 var amount = CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund]));
                 if (amount > _minBaseToTrade)
                 {
                     Logger.Info("RangerPro: Can place buy order...");
-
-                    if (_correctRangeEachTrade)
-                    {
-                        var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
-                        CorrectRange(stats, iterationTime);
-                    }
 
                     var order = _api.PlaceOrder(_base, _fund, "buy", amount, _priceToBuy);
                     NotificationManager.SendImportant(WhoAmI, string.Format("Order placed: {0}", order));
