@@ -73,7 +73,7 @@ namespace Temama.Trading.Algo
                 Trading = true;
                 while (Trading)
                 {
-                    DoTradingIteration();
+                    DoTradingIteration(DateTime.UtcNow);
                     Thread.Sleep(_interval * 1000);
                 }
             });
@@ -90,7 +90,7 @@ namespace Temama.Trading.Algo
             _tradingTask = null;
         }
 
-        private void DoTradingIteration()
+        private void DoTradingIteration(DateTime iterationTime)
         {
             try
             {
@@ -98,6 +98,7 @@ namespace Temama.Trading.Algo
                 Logger.Info(string.Format("Last price: {0}", last));
 
                 var myOrders = _api.GetMyOrders(_base, _fund);
+                myOrders.Sort(Order.SortByPrice);
                 var sbOrders = new StringBuilder();
                 foreach (var order in myOrders)
                 {
@@ -106,12 +107,13 @@ namespace Temama.Trading.Algo
                 }
                 Logger.Info(string.Format("{0} active orders: {1}", myOrders.Count, sbOrders));
 
-                if (DateTime.Now - _lastFiatBalanceCheckTime > _FiatBalanceCheckInterval)
+                if (iterationTime - _lastFiatBalanceCheckTime > _FiatBalanceCheckInterval)
                 {
                     CheckFiatBalance(last, myOrders);
+                    _lastFiatBalanceCheckTime = iterationTime;
                 }
 
-                MakeDecision(last, myOrders);
+                MakeDecision(last, myOrders, iterationTime);
             }
             catch (Exception ex)
             {
@@ -120,7 +122,7 @@ namespace Temama.Trading.Algo
             }
         }
 
-        private void MakeDecision(double last, List<Order> myOrders)
+        private void MakeDecision(double last, List<Order> myOrders, DateTime iterationTime)
         {
             // 0. Not implementing this step so far, but:
             //    If at this stage we have opened "sell-orders" below last price
@@ -144,7 +146,7 @@ namespace Temama.Trading.Algo
             //        current algorithm may be not efficient
             if (myOrders.Count == 0)
             {
-                if (!CheckForImbalance(last))
+                if (!CheckForImbalance(last, iterationTime))
                 {
                     // If we are here - there is imbalance, but
                     // no orders with acceptable price to fix this
@@ -355,7 +357,7 @@ namespace Temama.Trading.Algo
         /// </summary>
         /// <param name="price"></param>
         /// <returns>False if imbalance, but buy/sell failed for some reason</returns>
-        private bool CheckForImbalance(double price)
+        private bool CheckForImbalance(double price, DateTime iterationTime)
         {
             var funds = _api.GetFunds(_base, _fund);
             var fBase = funds.Values[_base];
@@ -381,7 +383,7 @@ namespace Temama.Trading.Algo
                         // We have more assets in BTC, need to sell some
                         var sellDiffInUah = (fBase * price - fFund) / 2;
                         var sellAmountBtc = sellDiffInUah / price;
-                        if (!SellByMarketPrice(sellAmountBtc, price - price * _buyNearPercent))
+                        if (!SellByMarketPrice(sellAmountBtc, price - price * _buyNearPercent, iterationTime))
                         {
                             Logger.Error(string.Format("CheckForImbalance: Sell by market price failed. Amount: {0}BTC", sellAmountBtc));
                             return false;
@@ -391,7 +393,7 @@ namespace Temama.Trading.Algo
                     {
                         // We have more assets in UAH, need to buy some BTC
                         var buyDiffInUah = (fFund - fBase * price) / 2;
-                        if (!BuyByMarketPrice(buyDiffInUah, price + price * _sellNearPercent))
+                        if (!BuyByMarketPrice(buyDiffInUah, price + price * _sellNearPercent, iterationTime))
                         {
                             Logger.Error(string.Format("CheckForImbalance: Buy by market price failed. Amount: {0}UAH", buyDiffInUah));
                             return false;
@@ -402,7 +404,7 @@ namespace Temama.Trading.Algo
             return true;
         }
 
-        private bool SellByMarketPrice(double amountBtc, double minAcceptablePrice)
+        private bool SellByMarketPrice(double amountBtc, double minAcceptablePrice, DateTime iterationTime)
         {
             var orderBook = _api.GetOrderBook(_base, _fund);
             var foundPrice = orderBook.FindPriceForSell(amountBtc);
@@ -413,21 +415,21 @@ namespace Temama.Trading.Algo
             }
 
             var sellOrder = _api.PlaceOrder(_base, _fund, "sell", GetRoundedSellVolume(amountBtc), foundPrice);
-            var placedTime = DateTime.Now;
+            var placedTime = iterationTime;
             do
             {
                 Thread.Sleep(2000);
                 var myOrders = _api.GetMyOrders(_base, _fund);
                 if (!myOrders.Any(o => o.Id == sellOrder.Id)) // If placed order is not in Active Orders - it filled
                     return true;
-            } while (DateTime.Now - placedTime < _marketOrderFillingTimeout);
+            } while (iterationTime - placedTime < _marketOrderFillingTimeout);
 
             Logger.Warning(string.Format("Failed to Sell by market price before timeout. Canceling order {0}", sellOrder));
             _api.CancellOrder(sellOrder);
             return false;
         }
 
-        private bool BuyByMarketPrice(double amountUah, double maxAcceptablePrice)
+        private bool BuyByMarketPrice(double amountUah, double maxAcceptablePrice, DateTime iterationTime)
         {
             var orderBook = _api.GetOrderBook(_base, _fund);
             var foundPrice = orderBook.FindPriceForBuy(amountUah);
@@ -438,14 +440,14 @@ namespace Temama.Trading.Algo
             }
 
             var buyOrder = _api.PlaceOrder(_base, _fund, "buy", CalculateBuyVolume(foundPrice, amountUah), foundPrice);
-            var placedTime = DateTime.Now;
+            var placedTime = iterationTime;
             do
             {
                 Thread.Sleep(2000);
                 var myOrders = _api.GetMyOrders(_base, _fund);
                 if (!myOrders.Any(o => o.Id == buyOrder.Id))
                     return true;
-            } while (DateTime.Now - placedTime < _marketOrderFillingTimeout);
+            } while (iterationTime - placedTime < _marketOrderFillingTimeout);
 
             Logger.Warning(string.Format("Failed to Buy by market price before timeout. Canceling order {0}", buyOrder));
             _api.CancellOrder(buyOrder);
@@ -454,7 +456,17 @@ namespace Temama.Trading.Algo
 
         public override void Emulate(DateTime start, DateTime end)
         {
-            throw new NotImplementedException();
+            var emu = _api as IExchangeEmulator;
+            var currTime = start;
+            emu.SetIterationTime(currTime);
+            Trading = true;
+            while (currTime <= end && Trading)
+            {
+                Logger.Info("RangerPro.Emulation: Iter Time: " + currTime);
+                emu.SetIterationTime(currTime);
+                DoTradingIteration(currTime);
+                currTime = currTime.AddSeconds(_interval);
+            }
         }
     }
 }

@@ -58,15 +58,25 @@ namespace Temama.Trading.Emulator
             Logger.Init("Temama.Trading.Emulator", new LoggerConsoleEcho());
             System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
             var config = new XmlDocument();
-            config.Load("EmulatorConfig_CexEthUsd.xml");
+            //config.Load("EmulatorConfig_CexEthUsd.xml");
+
+            //var api = new EmuApi();
+            //api.Init(config);
+
+            //var algo = new RangerPro();
+            //algo.Init(api, config);
+
+            //algo.Emulate(new DateTime(2017, 10, 1), new DateTime(2017, 11, 1));
+
+            config.Load("EmulatorConfig_Sheriff_CexEthUsd.xml");
 
             var api = new EmuApi();
             api.Init(config);
 
-            var algo = new RangerPro();
+            var algo = new Sheriff();
             algo.Init(api, config);
 
-            algo.Emulate(new DateTime(2017, 5, 1), new DateTime(2017, 6, 1));
+            algo.Emulate(new DateTime(2017, 10, 1), new DateTime(2017, 11, 1));
 
             Logger.Info("Emulation done...");
             Console.ReadKey();

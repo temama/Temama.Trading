@@ -243,6 +243,14 @@ namespace Temama.Trading.Exchanges.Emu
             };
             _userOrders.Add(res);
             Logger.Important("EmuApi.PlaceOrder: Placed order: " + res.ToString());
+
+            if ((side == "sell" && res.Price <= _ticks[_currentTick].Last) ||
+                (side == "buy" && res.Price >= _ticks[_currentTick].Last))
+            {
+                CompleteUserOrder(res, _lastTime);
+                _userOrders.Remove(res);
+            }
+
             return res.Clone();
         }
 
