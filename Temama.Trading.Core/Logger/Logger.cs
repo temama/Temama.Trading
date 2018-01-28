@@ -3,72 +3,87 @@ using System.IO;
 
 namespace Temama.Trading.Core.Logger
 {
-    public static class Logger
+    public class Logger
     {
-        private static object _token = new object();
-        private static string _fileName = @"Logs\Temama.Trading.log";
-        private static LogSeverity _logLevel = LogSeverity.Spam;
+        public static bool WriteToFile = true;
+        private object _token = new object();
+        private string _fileName = @"Logs\Temama.Trading.log";
+        private LogSeverity _logLevel = LogSeverity.Spam;
 
-        private static ILogHandler _logHandler;
+        private ILogHandler _logHandler;
 
-        public static void Init(string executableName, ILogHandler logHandler, LogSeverity logLevel = LogSeverity.Spam)
+        public Logger()
+        {
+
+        }
+
+        public Logger(string ownerName, ILogHandler logHandler, LogSeverity logLevel = LogSeverity.Spam)
+        {
+            Init(ownerName, logHandler, logLevel);
+        }
+
+        public void Init(string ownerName, ILogHandler logHandler, LogSeverity logLevel = LogSeverity.Spam)
         {
             if (!Directory.Exists("Logs"))
                 Directory.CreateDirectory("Logs");
-            _fileName = string.Format("Logs\\{0}_{1}.log", executableName, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+
+            _fileName = string.Format("Logs\\{0}_{1}.log", ownerName, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
             _logHandler = logHandler;
             _logLevel = logLevel;
         }
 
-        public static void Spam(string message)
+        public void Spam(string message)
         {
             LogMessage(LogSeverity.Spam, message);
         }
 
-        public static void Info(string message)
+        public void Info(string message)
         {
             LogMessage(LogSeverity.Info, message);
         }
 
-        public static void Important(string message)
+        public void Important(string message)
         {
             LogMessage(LogSeverity.ImportantInfo, message);
         }
 
-        public static void Warning(string message)
+        public void Warning(string message)
         {
             LogMessage(LogSeverity.Warning, message);
         }
 
-        public static void Error(string message)
+        public void Error(string message)
         {
             LogMessage(LogSeverity.Error, message);
         }
 
-        public static void Critical(string message)
+        public void Critical(string message)
         {
             LogMessage(LogSeverity.Critical, message);
         }
 
-        public static void LogMessage(LogSeverity severity, string message)
+        public void LogMessage(LogSeverity severity, string message)
         {
             if (severity < _logLevel)
                 return;
 
-            try
+            if (WriteToFile)
             {
-                lock (_token)
+                try
                 {
-                    File.AppendAllText(_fileName,
-                                       string.Format("{0}\t{1}\t{2}\r\n", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff"),
-                                                     GetSeverityRepresentation(severity), message));
+                    lock (_token)
+                    {
+                        File.AppendAllText(_fileName,
+                                           string.Format("{0}\t{1}\t{2}\r\n", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff"),
+                                                         GetSeverityRepresentation(severity), message));
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Unable to write log in log file {0} due to exception: {1}", _fileName, ex.Message);
-                Console.WriteLine("{0}\t{1}\t{2}\r\n", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff"),
-                                  GetSeverityRepresentation(severity), message);
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unable to write log in log file {0} due to exception: {1}", _fileName, ex.Message);
+                    Console.WriteLine("{0}\t{1}\t{2}\r\n", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff"),
+                                      GetSeverityRepresentation(severity), message);
+                }
             }
 
             if (_logHandler != null)
@@ -114,6 +129,25 @@ namespace Temama.Trading.Core.Logger
                     return "!!INFO!!";
                 default:
                     return "UNKNOWN ";
+            }
+        }
+
+        /// <summary>
+        /// Delete log files older than <para>days</para> days
+        /// </summary>
+        /// <param name="days">Days to keep logs</param>
+        public static void CleanupLogsDir(int days)
+        {
+            if (!Directory.Exists("Logs"))
+                return;
+
+            string[] files = Directory.GetFiles("Logs");
+
+            foreach (string file in files)
+            {
+                var fi = new FileInfo(file);
+                if (fi.LastWriteTime < DateTime.Now.AddDays(-1 * days))
+                    fi.Delete();
             }
         }
     }

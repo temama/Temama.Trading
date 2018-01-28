@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Utils;
 
 namespace Temama.Trading.Algo
 {
-    public class Shaper : Algorithm
+    public class Shaper : TradingBot
     {
         private class Strategy
         {
@@ -27,8 +24,7 @@ namespace Temama.Trading.Algo
             public double Percent = 0;
         }
 
-
-        private int _interval = 60;
+        
         private IExchangeAnalitics _analitics;
         private int _candleTime = 300;
         private double _zeroDiff = 0.001;
@@ -37,43 +33,36 @@ namespace Temama.Trading.Algo
         private Strategy _sellStrategy;
         private int _utcOffset = 0;
 
-        public override void Init(IExchangeApi api, XmlDocument config)
+        public override string Name()
         {
-            if (!(api is IExchangeAnalitics))
+            return "Shaper";
+        }
+
+        public Shaper(XmlNode config, ILogHandler logHandler) : base(config, logHandler)
+        { }
+
+        protected override void InitAlgo(XmlNode config)
+        {
+            if (!(_api is IExchangeAnalitics))
             {
                 throw new Exception(string.Format("Shaper can't run on {0} exchange, as it doesn't implement IExchangeAnalitics",
-                    api.Name()));
+                    _api.Name()));
             }
             else
-                _analitics = api as IExchangeAnalitics;
+                _analitics = _api as IExchangeAnalitics;
 
-            _api = api;
-
-            var node = config.SelectSingleNode("//TemamaTradingConfig/BaseCurrency");
-            _base = node.InnerText;
-            node = config.SelectSingleNode("//TemamaTradingConfig/FundCurrency");
-            _fund = node.InnerText;
-            node = config.SelectSingleNode("//TemamaTradingConfig/MinBaseToTrade");
-            _minBaseToTrade = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture);
-            node = config.SelectSingleNode("//TemamaTradingConfig/MinFundToTrade");
-            _minFundToTrade = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture);
-            node = config.SelectSingleNode("//TemamaTradingConfig/ExecuteInterval");
-            _interval = Convert.ToInt32(node.InnerText);
-            node = config.SelectSingleNode("//TemamaTradingConfig/CandleTime");
-            _candleTime = Convert.ToInt32(node.InnerText);
-            node = config.SelectSingleNode("//TemamaTradingConfig/ZeroDiff");
-            _zeroDiff = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
-            node = config.SelectSingleNode("//TemamaTradingConfig/UtcTimeOffset");
-            _utcOffset = Convert.ToInt32(node.InnerText);
+            _candleTime = Convert.ToInt32(config.GetConfigValue("CandleTime"));
+            _zeroDiff = Convert.ToDouble(config.GetConfigValue("ZeroDiff"), CultureInfo.InvariantCulture) * 0.01;
+            _utcOffset = Convert.ToInt32(config.GetConfigValue("UtcTimeOffset"));
 
             _buyStrategy = new Strategy();
             _sellStrategy = new Strategy();
 
-            node = config.SelectSingleNode("//TemamaTradingConfig/BuyStrategy");
+            var node = config.SelectSingleNode("BuyStrategy");
             if (node.Attributes["type"].Value.ToLower() == "shape")
             {
                 _buyStrategy.Type = Strategy.TradeType.Shape;
-                foreach (XmlNode shapeNode in config.SelectNodes("//TemamaTradingConfig/BuyStrategy/Shape"))
+                foreach (XmlNode shapeNode in config.SelectNodes("BuyStrategy/Shape"))
                 {
                     var shape = shapeNode.InnerText;
                     _buyStrategy.Shapes.Add(shape);
@@ -87,11 +76,11 @@ namespace Temama.Trading.Algo
                 _buyStrategy.Percent = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
             }
 
-            node = config.SelectSingleNode("//TemamaTradingConfig/SellStrategy");
+            node = config.SelectSingleNode("SellStrategy");
             if (node.Attributes["type"].Value.ToLower() == "shape")
             {
                 _sellStrategy.Type = Strategy.TradeType.Shape;
-                foreach (XmlNode shapeNode in config.SelectNodes("//TemamaTradingConfig/SellStrategy/Shape"))
+                foreach (XmlNode shapeNode in config.SelectNodes("SellStrategy/Shape"))
                 {
                     var shape = shapeNode.InnerText;
                     _sellStrategy.Shapes.Add(shape);
@@ -104,45 +93,12 @@ namespace Temama.Trading.Algo
                 _sellStrategy.Type = Strategy.TradeType.Percent;
                 _sellStrategy.Percent = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
             }
-
-            _pair = _base + "/" + _fund;
         }
 
-        public override Task StartTrading()
-        {
-            if (Trading)
-            {
-                Logger.Error("Shaper: Trading already in progress");
-                return null;
-            }
-
-            var task = Task.Run(() =>
-            {
-                Logger.Info(string.Format("Shaper: Starting trading pair {0}...", _pair.ToUpper()));
-                Trading = true;
-                while (Trading)
-                {
-                    DoTradingIteration();
-                    Thread.Sleep(_interval * 1000);
-                }
-            });
-            _tradingTask = task;
-            return task;
-        }
-
-        private void DoTradingIteration()
+        protected override void TradingIteration(DateTime dateTime)
         {
             var shape = GetCurrentShape();
-            Logger.Info(shape);
-        }
-
-        public override void StopTrading()
-        {
-            Logger.Info("Shaper: Stopping trading...");
-            Trading = false;
-            if (_tradingTask != null)
-                _tradingTask.Wait();
-            _tradingTask = null;
+            _log.Info(shape);
         }
 
         private string GetCurrentShape()
@@ -153,7 +109,7 @@ namespace Temama.Trading.Algo
             var candles = CandlestickHelper.TicksToCandles(stats, TimeSpan.FromSeconds(_candleTime));
             foreach (var candle in candles)
             {
-                Logger.Info(candle.ToString());
+                _log.Info(candle.ToString());
                 var diff = candle.Body;
                 if (Math.Abs(diff) <= _zeroDiff)
                     res += "_";
@@ -171,11 +127,6 @@ namespace Temama.Trading.Algo
             else if (second.Time < first.Time)
                 return 1;
             else return 0;
-        }
-
-        public override void Emulate(DateTime start, DateTime end)
-        {
-            throw new NotImplementedException();
         }
     }
 }

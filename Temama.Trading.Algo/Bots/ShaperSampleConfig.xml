@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<TemamaTradingConfig>
+  <Bot name="Shaper" displayName="example" autostart="true">
+    <Api exchange="Kuna">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+  
+    <!-- Algo -->
+    <BaseCurrency>eth</BaseCurrency>
+    <FundCurrency>usd</FundCurrency>
+    <MinBaseToTrade>0.001</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>
+    <ExecuteInterval>30</ExecuteInterval>  <!-- Interval between bot iterations in seconds-->
+    <CandleTime>300</CandleTime>
+    <ZeroDiff>0.1</ZeroDiff>  <!-- Percent of price change which is considered as flat -->
+    <UtcTimeOffset>0</UtcTimeOffset>
+
+  
+    <BuyStrategy type="shape">
+      <Shape>\\_/</Shape>
+      <Shape>___/</Shape>
+      <Shape>\\\/</Shape>
+    </BuyStrategy>
+
+    <SellStrategy type="percent">1</SellStrategy>
+  </Bot>
+</TemamaTradingConfig>

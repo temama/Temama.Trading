@@ -9,7 +9,7 @@ namespace Temama.Trading.Core.Reporting
 {
     public static class HtmlReportHelper
     {
-        public static string ReportRunningBots(List<Algorithm> bots)
+        public static string ReportRunningBots(List<TradingBot> bots)
         {
             var res = new StringBuilder();
             res.Append("<h3>Running bots</h3>");

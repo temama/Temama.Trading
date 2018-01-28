@@ -11,65 +11,72 @@ using System.Web;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Utils;
 using Temama.Trading.Core.Web;
 
 namespace Temama.Trading.Exchanges.Kuna
 {
-    public class KunaApi : IExchangeApi, IExchangeAnalitics
+    public class KunaApi : ExchangeApi, IExchangeAnalitics
     {
         private string _baseUri = "https://kuna.io/api/v2/";
         private string _publicKey;
         private string _secretKey;
 
-        public string Name()
+        public override string Name()
         {
             return "KUNA.IO";
         }
 
-        public void Init(XmlDocument config)
+        public KunaApi(XmlNode config, Logger logger) : base(config, logger)
         {
-            var node = config.SelectSingleNode("//TemamaTradingConfig/PublicKey");
-            _publicKey = node.InnerText;
-            node = config.SelectSingleNode("//TemamaTradingConfig/SecretKey");
-            _secretKey = node.InnerText;
         }
 
-        public double GetLastPrice(string baseCur, string fundCur)
+        protected override void Init(XmlNode config)
+        {
+            _publicKey = config.GetConfigValue("PublicKey", true);
+            _secretKey = config.GetConfigValue("SecretKey", true);
+         
+            _publicOnly = (string.IsNullOrEmpty(_publicKey) || string.IsNullOrEmpty(_secretKey));
+            if (_publicOnly)
+                _log.Info($"{Name()} inited in PublicApiOnly mode");
+        }
+
+        public override double GetLastPrice(string baseCur, string fundCur)
         {
             var pair = baseCur + fundCur;
             var uri = _baseUri + "tickers/" + pair;
-            Logger.Spam("Request: " + uri);
+            _log.Spam("Request: " + uri);
             var tickerResponse = WebApi.Query(uri);
-            Logger.Spam("Response: " + tickerResponse);
+            _log.Spam("Response: " + tickerResponse);
             var json = JObject.Parse(tickerResponse);
             var last = (JValue)json["ticker"]["last"];
             return Convert.ToDouble(last.Value, CultureInfo.InvariantCulture);
         }
         
-        public OrderBook GetOrderBook(string baseCur, string fundCur)
+        public override OrderBook GetOrderBook(string baseCur, string fundCur)
         {
             var pair = baseCur + fundCur;
             var uri = _baseUri + "order_book?market=" + pair;
-            Logger.Spam("Request: " + uri);
+            _log.Spam("Request: " + uri);
             var response = WebApi.Query(uri);
-            Logger.Spam("GetOrderBoor: response: " + response);
+            _log.Spam("GetOrderBoor: response: " + response);
             return KunaOrderBook.FromJson(JObject.Parse(response));
         }
 
-        public Funds GetFunds(string baseCur, string fundCur)
+        protected override Funds GetFundsImpl(string baseCur, string fundCur)
         {
             var response = UserQuery("members/me", "GET", new Dictionary<string, string>());
-            Logger.Spam("Response: " + response);
+            _log.Spam("Response: " + response);
             var json = JObject.Parse(response);
             return KunaFunds.FromUserInfo(json, new List<string>() { baseCur, fundCur });
         }
 
-        public Order PlaceOrder(string baseCur, string fundCur, string side, double volume, double price)
+        protected override Order PlaceOrderImpl(string baseCur, string fundCur, string side, double volume, double price)
         {
             var pair = baseCur + fundCur;
-            Logger.Spam(string.Format("KUNA: Placing order: {0}:{1}:{2}:{3}", side, pair, volume, price));
+            _log.Spam($"KUNA: Placing order: {side}:{pair}:{volume}:{price}");
             if (volume == 0 || price == 0)
-                throw new Exception(string.Format("PlaceOrder: Volume or Price can't be zero. Vol={0}; Price={1}", volume, price));
+                throw new Exception($"PlaceOrder: Volume or Price can't be zero. Vol={volume}; Price={price}");
 
             var response = UserQuery("orders", "POST", new Dictionary<string, string>(){
                 { "side", side },
@@ -77,49 +84,42 @@ namespace Temama.Trading.Exchanges.Kuna
                 { "market", pair },
                 { "price", price.ToString(CultureInfo.InvariantCulture) }
             });
-            Logger.Spam("Response: " + response);
-
-            // Response of placing order is order JSON
-            // Checking if query was successfull by trying to parse response as order
+            _log.Spam("Response: " + response);
+            
             var resp = KunaOrder.FromJson(JObject.Parse(response));
-            Logger.Important(string.Format("KUNA: Order {0} placed", resp));
             return resp;
         }
 
-        public void CancellOrder(Order order)
+        protected override void CancellOrderImpl(Order order)
         {
             var response = UserQuery("order/delete", "POST", new Dictionary<string, string>()
                 { { "id", order.Id.ToString() } });
-            Logger.Spam("Response: " + response);
-
-            // Response of cancellation is order JSON
-            // Checking if query was successfull by trying to parse response as order
+            _log.Spam("Response: " + response);
+            
             var resp = KunaOrder.FromJson(JObject.Parse(response));
-            Logger.Warning(string.Format("KunaTrading: Order {0} was cancelled", resp));
         }
 
-        public List<Order> GetMyOrders(string baseCur, string fundCur)
+        protected override List<Order> GetMyOrdersImpl(string baseCur, string fundCur)
         {
             var pair = baseCur + fundCur;
             var orders = new List<Order>();
             var response = UserQuery("orders", "GET", new Dictionary<string, string>() { { "market", pair } });
-            Logger.Spam("Response: " + response);
+            _log.Spam("Response: " + response);
 
             var json = JArray.Parse(response);
             foreach (var jsonOrder in json)
             {
                 orders.Add(KunaOrder.FromJson(jsonOrder as JObject));
             }
-            orders.Sort(KunaOrder.SortByPrice);
             return orders;
         }
 
-        public List<Trade> GetMyTrades(string baseCur, string fundCur)
+        protected override List<Trade> GetMyTradesImpl(string baseCur, string fundCur)
         {
             var pair = baseCur + fundCur;
             var trades = new List<Trade>();
             var response = UserQuery("trades/my", "GET", new Dictionary<string, string>() { { "market", pair } });
-            Logger.Spam("Response: " + response);
+            _log.Spam("Response: " + response);
 
             var json = JArray.Parse(response);
             foreach (var jsonOrder in json)
@@ -165,7 +165,7 @@ namespace Temama.Trading.Exchanges.Kuna
             args["tonce"] = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
             args["signature"] = GenerateSignature(path, method, args);
             var dataStr = BuildPostData(args, true);
-            Logger.Spam(string.Format("{0}: {1}{2}?{3}", method, _baseUri, path, dataStr));
+            _log.Spam($"{method}: {_baseUri}{path}?{dataStr}");
 
             if (method == "POST")
             {

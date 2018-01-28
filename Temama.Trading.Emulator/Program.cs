@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Algo;
-using Temama.Trading.Core.Algo;
-using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
+using Temama.Trading.Core.Utils;
+using Temama.Trading.Exchanges;
 using Temama.Trading.Exchanges.Emu;
 
 namespace Temama.Trading.Emulator
@@ -22,7 +24,7 @@ namespace Temama.Trading.Emulator
             public void LogMessage(LogSeverity severity, string message)
             {
                 // don't spam at console. It will be written in log file
-                if (severity == LogSeverity.Spam)
+                if (severity < LogSeverity.ImportantInfo)
                     return;
 
                 lock (_token)
@@ -55,36 +57,46 @@ namespace Temama.Trading.Emulator
 
         static void Main(string[] args)
         {
-            Logger.Init("Temama.Trading.Emulator", new LoggerConsoleEcho());
-            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+            var configFile = "EmulationConfig.xml";
+            if (args.Length > 0)
+                configFile = args[0];
+
+            Logger.CleanupLogsDir(2);
+            var logHandler = new LoggerConsoleEcho();
+            Globals.Logger.Init("Temama.Trading.Emulator", logHandler);
+            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+
+            ExchangesHelper.RegisterExchanges();
+            AlgoHelper.InitAlgos();
+
             var config = new XmlDocument();
-            //config.Load("EmulatorConfig_CexEthUsd.xml");
+            config.Load(configFile);
+            var node = config.SelectSingleNode("//TemamaTradingConfig");
+            var start = DateTime.Parse(node.GetConfigValue("StartDate"));
+            var end = DateTime.Parse(node.GetConfigValue("EndDate"));
 
-            //var api = new EmuApi();
-            //api.Init(config);
+            var algos = ConfigHelper.GetAlgosFromConfig(config, logHandler);
+            
+            var processes = new List<Task>();
 
-            //var algo = new RangerPro();
-            //algo.Init(api, config);
+            foreach (var algo in algos.Where(a => a.AutoStart))
+            {
+                Console.Title = "Emulating: " + algo.WhoAmI;
+                Globals.Logger.Info("Starting emulation: " + algo.WhoAmI);
+                algo.Emulate(start, end);
+                Globals.Logger.Info("Emulation is done for: " + algo.WhoAmI);
+            }
+            
+            Task.WaitAll(processes.ToArray());
 
-            //algo.Emulate(new DateTime(2017, 10, 1), new DateTime(2017, 11, 1));
-
-            config.Load("EmulatorConfig_Sheriff_CexEthUsd.xml");
-
-            var api = new EmuApi();
-            api.Init(config);
-
-            var algo = new Sheriff();
-            algo.Init(api, config);
-
-            algo.Emulate(new DateTime(2017, 10, 1), new DateTime(2017, 11, 1));
-
-            Logger.Info("Emulation done...");
+            Globals.Logger.Info("Emulation completted");
             Console.ReadKey();
         }
 
         private static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
         {
-            Logger.Critical("Unhandled exception: " + e.ExceptionObject.ToString());
+            Globals.Logger.Critical("Unhandled exception: " + e.ExceptionObject.ToString());
             NotificationManager.SendError("Console", "Unhandled exception: " + e.ExceptionObject.ToString());
         }
     }

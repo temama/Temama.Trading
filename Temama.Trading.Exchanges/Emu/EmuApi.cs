@@ -9,18 +9,19 @@ using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Utils;
 
 namespace Temama.Trading.Exchanges.Emu
 {
-    public class EmuApi : IExchangeApi, IExchangeAnalitics, IExchangeEmulator
+    public class EmuApi : ExchangeApi, IExchangeAnalitics, IExchangeEmulator
     {
         private DateTime _lastTime = DateTime.MinValue;
         private int _currentTick = 0;
         private DateTime _ticksStartDate = DateTime.MinValue;
         private DateTime _ticksEndDate = DateTime.MinValue;
         private Funds _userFunds = new Funds();
-        private double _buyFee = 0.0;
-        private double _sellFee = 0.0;
+        private double _takerFee = 0.0;
+        private double _makerFee = 0.0;
         private int _nonceId = 100;
         private string _base;
         private string _fund;
@@ -29,19 +30,20 @@ namespace Temama.Trading.Exchanges.Emu
         private List<Order> _userOrders = new List<Order>();
         private List<Trade> _userTrades = new List<Trade>();
 
-        public void Init(XmlDocument config)
+        public EmuApi(XmlNode config, Logger logger) : base(config, logger)
+        { }
+
+        protected override void Init(XmlNode config)
         {
+            _publicOnly = false;
             _ticks = new List<Tick>();
             _userOrders = new List<Order>();
             _userTrades = new List<Trade>();
-
-            var node = config.SelectSingleNode("//TemamaTradingConfig/HistoricalFile");
-            var historicalFile = node.InnerText;
-            node = config.SelectSingleNode("//TemamaTradingConfig/BuyFee");
-            _buyFee = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
-            node = config.SelectSingleNode("//TemamaTradingConfig/SellFee");
-            _sellFee = Convert.ToDouble(node.InnerText, CultureInfo.InvariantCulture) * 0.01;
-            node = config.SelectSingleNode("//TemamaTradingConfig/InitialFunds");
+            
+            var historicalFile = config.GetConfigValue("HistoricalFile"); 
+            _takerFee = Convert.ToDouble(config.GetConfigValue("TakerFee"), CultureInfo.InvariantCulture) * 0.01;
+            _makerFee = Convert.ToDouble(config.GetConfigValue("MakerFee"), CultureInfo.InvariantCulture) * 0.01;
+            var node = config.SelectSingleNode("InitialFunds");
             foreach (XmlNode fund in node.ChildNodes)
             {
                 var curr = fund.Name;
@@ -49,9 +51,10 @@ namespace Temama.Trading.Exchanges.Emu
                 _userFunds.Values.Add(curr, value);
             }
 
+            _log.Info("EmuApi.Init: Loading data from " + historicalFile);
             LoadHistoricalData(historicalFile);
 
-            Logger.Info(string.Format("EmuApi.Init: Loaded data from {0} to {1}", _ticksStartDate, _ticksEndDate));
+            _log.Info($"EmuApi.Init: Loaded data from {_ticksStartDate} to {_ticksEndDate}");
         }
         
         public void SetIterationTime(DateTime time)
@@ -81,17 +84,23 @@ namespace Temama.Trading.Exchanges.Emu
 
             if (_currentTick >= _ticks.Count - 1)
             {
-                Logger.Info("Current funds: " + _userFunds);
+                _log.Info("Current funds: " + _userFunds);
                 throw new Exception("EmuApi.EmulateExchangeOperations: Exceeded end of emulation range");
             }
         }
 
-        public string Name()
+        public override string Name()
         {
             return "Emulator";
         }
 
-        public void CancellOrder(Order order)
+        public override double GetLastPrice(string baseCur, string fundCur)
+        {
+            SetBaseFund(baseCur, fundCur);
+            return _ticks[_currentTick].Last;
+        }
+
+        protected override void CancellOrderImpl(Order order)
         {
             var userOrder = _userOrders.FirstOrDefault(o => o.Id == order.Id);
             if (userOrder == null)
@@ -106,10 +115,9 @@ namespace Temama.Trading.Exchanges.Emu
                 _userFunds.Values[_base] += userOrder.Volume;
             }
             _userOrders.Remove(userOrder);
-            Logger.Warning("EmuApi.CancellOrder: Order cancelled: " + userOrder.ToString());
         }
 
-        public Funds GetFunds(string baseCur, string fundCur)
+        protected override Funds GetFundsImpl(string baseCur, string fundCur)
         {
             SetBaseFund(baseCur, fundCur);
             var funds = new Funds();
@@ -120,13 +128,7 @@ namespace Temama.Trading.Exchanges.Emu
             return funds;
         }
 
-        public double GetLastPrice(string baseCur, string fundCur)
-        {
-            SetBaseFund(baseCur, fundCur);
-            return _ticks[_currentTick].Last;
-        }
-
-        public List<Order> GetMyOrders(string baseCur, string fundCur)
+        protected override List<Order> GetMyOrdersImpl(string baseCur, string fundCur)
         {
             SetBaseFund(baseCur, fundCur);
             var res = new List<Order>();
@@ -137,7 +139,7 @@ namespace Temama.Trading.Exchanges.Emu
             return res;
         }
 
-        public List<Trade> GetMyTrades(string baseCur, string fundCur)
+        protected override List<Trade> GetMyTradesImpl(string baseCur, string fundCur)
         {
             SetBaseFund(baseCur, fundCur);
             var res = new List<Trade>();
@@ -164,7 +166,7 @@ namespace Temama.Trading.Exchanges.Emu
         /// <param name="baseCur"></param>
         /// <param name="fundCur"></param>
         /// <returns></returns>
-        public OrderBook GetOrderBook(string baseCur, string fundCur)
+        public override OrderBook GetOrderBook(string baseCur, string fundCur)
         {
             SetBaseFund(baseCur, fundCur);
             var book = new OrderBook();
@@ -213,7 +215,7 @@ namespace Temama.Trading.Exchanges.Emu
             return res;
         }
 
-        public Order PlaceOrder(string baseCur, string fundCur, string side, double volume, double price)
+        protected override Order PlaceOrderImpl(string baseCur, string fundCur, string side, double volume, double price)
         {
             SetBaseFund(baseCur, fundCur);
             if (side == "buy")
@@ -242,12 +244,12 @@ namespace Temama.Trading.Exchanges.Emu
                 Side = side
             };
             _userOrders.Add(res);
-            Logger.Important("EmuApi.PlaceOrder: Placed order: " + res.ToString());
+            _log.Important("EmuApi.PlaceOrder: Placed order: " + res.ToString());
 
             if ((side == "sell" && res.Price <= _ticks[_currentTick].Last) ||
                 (side == "buy" && res.Price >= _ticks[_currentTick].Last))
             {
-                CompleteUserOrder(res, _lastTime);
+                CompleteUserOrder(res, _lastTime, true);
                 _userOrders.Remove(res);
             }
 
@@ -277,7 +279,7 @@ namespace Temama.Trading.Exchanges.Emu
                 if ((order.Side == "buy" && price <= order.Price) ||
                     (order.Side == "sell" && price >= order.Price))
                 {
-                    CompleteUserOrder(order, _ticks[tickNumber].Time);
+                    CompleteUserOrder(order, _ticks[tickNumber].Time, false);
                     ordersToRemove.Add(order);
                 }
             }
@@ -291,19 +293,19 @@ namespace Temama.Trading.Exchanges.Emu
             }
         }
 
-        private void CompleteUserOrder(Order order, DateTime dateTime)
+        private void CompleteUserOrder(Order order, DateTime dateTime, bool isMarket)
         {
             double amount;
             if (order.Side == "buy")
             {
                 amount = order.Volume;
-                amount -= amount * _buyFee;
+                amount -= amount * (isMarket ? _takerFee : _makerFee);
                 _userFunds.Values[_base] += amount;
             }
             else
             {
                 amount = order.Price * order.Volume;
-                amount -= amount * _sellFee;
+                amount -= amount * (isMarket ? _takerFee : _makerFee);
                 _userFunds.Values[_fund] += amount;
             }
 

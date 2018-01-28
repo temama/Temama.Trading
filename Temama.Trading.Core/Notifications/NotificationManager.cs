@@ -38,5 +38,13 @@ namespace Temama.Trading.Core.Notifications
             
             _notificator.SendImportant(who, message);
         }
+
+        public static void SendWarning(string who, string message)
+        {
+            if (_notificator == null)
+                return;
+
+            _notificator.SendWarning(who, message);
+        }
     }
 }

@@ -6,6 +6,8 @@
 
         void SendImportant(string who, string message);
 
+        void SendWarning(string who, string message);
+
         void SendError(string who, string message);
     }
 }

@@ -3,13 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
@@ -18,7 +14,7 @@ using Temama.Trading.Core.Web;
 
 namespace Temama.Trading.Exchanges.Cex
 {
-    public class CexApi : IExchangeApi, IExchangeAnalitics
+    public class CexApi : ExchangeApi, IExchangeAnalitics
     {
         private string _baseUri = "https://cex.io/api/";
         private string _publicKey;
@@ -27,106 +23,103 @@ namespace Temama.Trading.Exchanges.Cex
         private int _OrderBookDepth = 20;
         private int _tradesFetchCount = 20;
 
-        public string Name()
+        public override string Name()
         {
             return "CEX.IO";
         }
 
-        public void Init(XmlDocument config)
+        public CexApi(XmlNode config, Logger logger) : base(config, logger) { }
+
+        protected override void Init(XmlNode config)
         {
-            var node = config.SelectSingleNode("//TemamaTradingConfig/PublicKey");
-            _publicKey = node.InnerText;
-            node = config.SelectSingleNode("//TemamaTradingConfig/SecretKey");
-            _secretKey = node.InnerText;
-            node = config.SelectSingleNode("//TemamaTradingConfig/UserID");
-            _userId = node.InnerText;
+            _publicKey = config.GetConfigValue("PublicKey", true);
+            _secretKey = config.GetConfigValue("SecretKey", true);
+            _userId = config.GetConfigValue("UserID", true);
+
+            _publicOnly = (string.IsNullOrEmpty(_publicKey) || string.IsNullOrEmpty(_secretKey) || string.IsNullOrEmpty(_userId));
+            if (_publicOnly)
+                _log.Info($"{Name()} inited in PublicApiOnly mode");
         }
 
-        public double GetLastPrice(string baseCur, string fundCur)
+        public override double GetLastPrice(string baseCur, string fundCur)
         {
             var uri = _baseUri + "last_price/" + baseCur.ToUpper() + "/" + fundCur.ToUpper();
-            Logger.Spam("Request: " + uri);
+            _log.Spam("Request: " + uri);
             var tickerResponse = WebApi.Query(uri);
-            Logger.Spam("Response: " + tickerResponse);
+            _log.Spam("Response: " + tickerResponse);
             var json = JObject.Parse(tickerResponse);
             var last = (JValue)json["lprice"];
             return Convert.ToDouble(last.Value, CultureInfo.InvariantCulture);
         }
 
-        public OrderBook GetOrderBook(string baseCur, string fundCur)
+        public override OrderBook GetOrderBook(string baseCur, string fundCur)
         {
-            var uri = _baseUri + string.Format("order_book/{0}/{1}/?depth={2}", baseCur.ToUpper(), fundCur.ToUpper(), _OrderBookDepth);
-            Logger.Spam("Request: " + uri);
+            var uri = _baseUri + $"order_book/{baseCur.ToUpper()}/{fundCur.ToUpper()}/?depth={_OrderBookDepth}";
+            _log.Spam("Request: " + uri);
             var response = WebApi.Query(uri);
-            Logger.Spam("GetOrderBoor: response: " + response);
+            _log.Spam("GetOrderBoor: response: " + response);
             return CexOrderBook.FromJson(JObject.Parse(response));
         }
 
-        public Funds GetFunds(string baseCur, string fundCur)
+        protected override Funds GetFundsImpl(string baseCur, string fundCur)
         {
             var response = UserQuery("balance/", new Dictionary<string, string>());
-            Logger.Spam("Response: " + response);
+            _log.Spam("Response: " + response);
             var json = JObject.Parse(response);
             return CexFunds.FromUserInfo(json, new List<string>() { baseCur, fundCur });
         }
         
-        public Order PlaceOrder(string baseCur, string fundCur, string side, double volume, double price)
+        protected override Order PlaceOrderImpl(string baseCur, string fundCur, string side, double volume, double price)
         {
             var pair = baseCur + fundCur;
-            Logger.Spam(string.Format("CEX.IO: Placing order: {0}:{1}:{2}:{3}", side, pair, volume, price));
+            _log.Spam($"{Name()}: Placing order: {side}:{pair}:{volume}:{price}");
             if (volume == 0 || price == 0)
-                throw new Exception(string.Format("PlaceOrder: Volume or Price can't be zero. Vol={0}; Price={1}", volume, price));
+                throw new Exception($"PlaceOrder: Volume or Price can't be zero. Vol={volume}; Price={price}");
 
-            var response = UserQuery(string.Format("place_order/{0}/{1}", baseCur.ToUpper(), fundCur.ToUpper()), 
+            var response = UserQuery($"place_order/{baseCur.ToUpper()}/{fundCur.ToUpper()}", 
                 new Dictionary<string, string>(){
                 { "type", side },
                 { "amount", volume.ToString(CultureInfo.InvariantCulture) },
                 { "price", price.ToString(CultureInfo.InvariantCulture) }
             });
-            Logger.Spam("Response: " + response);
-
-            // Response of placing order is order JSON
-            // Checking if query was successfull by trying to parse response as order
+            _log.Spam("Response: " + response);
+            
             var resp = CexOrder.FromJson(JObject.Parse(response));
             resp.Pair = baseCur.ToUpper() + fundCur.ToUpper();
-            Logger.Important(string.Format("CEX.IO: Order {0} placed", resp));
             return resp;
         }
 
-        public void CancellOrder(Order order)
+        protected override void CancellOrderImpl(Order order)
         {
             var response = UserQuery("cancel_order/", new Dictionary<string, string>()
                 { { "id", order.Id.ToString() } });
-            Logger.Spam("Response: " + response);
-
-            // Response of cancellation is order JSON
-            // Checking if query was successfull by trying to parse response as order
+            _log.Spam("Response: " + response);
+            
             if (response.ToLower() != "true")
-                throw new Exception(string.Format("CEX.IO: Failed to cancel order {0}. Response: {1}", order, response));
-            Logger.Warning(string.Format("CEX.IO: Order {0} was cancelled", order));
+                throw new Exception($"{Name()}: Failed to cancel order {order}. Response: {response}");
         }
                 
-        public List<Order> GetMyOrders(string baseCur, string fundCur)
+        protected override List<Order> GetMyOrdersImpl(string baseCur, string fundCur)
         {
             var orders = new List<Order>();
-            var response = UserQuery(string.Format("open_orders/{0}/{1}", baseCur.ToUpper(), fundCur.ToUpper()), new Dictionary<string, string>());
-            Logger.Spam("Response: " + response);
+            var response = UserQuery($"open_orders/{baseCur.ToUpper()}/{fundCur.ToUpper()}", new Dictionary<string, string>());
+            _log.Spam("Response: " + response);
 
             var json = JArray.Parse(response);
             foreach (var jsonOrder in json)
             {
                 orders.Add(CexOrder.FromJson(jsonOrder as JObject));
             }
-            orders.Sort(CexOrder.SortByPrice);
+            orders.Sort(Order.SortByPrice);
             return orders;
         }
 
-        public List<Trade> GetMyTrades(string baseCur, string fundCur)
+        protected override List<Trade> GetMyTradesImpl(string baseCur, string fundCur)
         {
             var trades = new List<Trade>();
-            var response = UserQuery(string.Format("archived_orders/{0}/{1}", baseCur.ToUpper(), fundCur.ToUpper()), 
+            var response = UserQuery($"archived_orders/{baseCur.ToUpper()}/{fundCur.ToUpper()}",
                 new Dictionary<string, string>() { { "limit", _tradesFetchCount.ToString() } });
-            Logger.Spam("Response: " + response);
+            _log.Spam("Response: " + response);
 
             var json = JArray.Parse(response);
             foreach (var jsonOrder in json)
@@ -140,13 +133,6 @@ namespace Temama.Trading.Exchanges.Cex
 
         public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 1000)
         {
-            //var response = PostQuery(string.Format("price_stats/{0}/{1}", baseCur.ToUpper(), fundCur.ToUpper()),
-            //    new Dictionary<string, string>() {
-            //        { "lastHours", Convert.ToInt32(Math.Round((DateTime.Now - fromDate).TotalHours)).ToString()},
-            //        { "maxRespArrSize", maxResultCount.ToString() }
-            //    });
-            //Logger.Spam("Response: " + response);
-
             var uri = _baseUri + "trade_history/" + baseCur.ToUpper() + "/" + fundCur.ToUpper();
             var response = WebApi.Query(uri);
 
@@ -192,7 +178,7 @@ namespace Temama.Trading.Exchanges.Cex
 
         private string GenerateSignature(string nonce)
         {
-            var bytes = Encoding.UTF8.GetBytes(string.Format("{0}{1}{2}", nonce, _userId, _publicKey));
+            var bytes = Encoding.UTF8.GetBytes($"{nonce}{_userId}{_publicKey}");
             var key = Encoding.ASCII.GetBytes(_secretKey);
             using (var hmac = new HMACSHA256(key))
             {

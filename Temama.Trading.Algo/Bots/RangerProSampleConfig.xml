@@ -1,31 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?> 
 <TemamaTradingConfig>
-  <StartDate>01-07-2017</StartDate>
-  <EndDate>01-08-2017</EndDate>
-  
-  <Bot name="RangerPro" displayName="emulation" autostart="true">
-    <Api exchange="emulator">
-      <!-- EmuAPI -->
-      <HistoricalFile>CexBtcUsdHistorical.txt</HistoricalFile>
-      <MakerFee>0.25</MakerFee>
-      <TakerFee>0.16</TakerFee>
-      <InitialFunds>
-        <BTC>0.0</BTC>
-        <USD>500.0</USD>
-      </InitialFunds>
+  <Bot name="RangerPro" displayName="example" autostart="true">
+    <Api exchange="Cex">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+      <UserID>up0000000</UserID> <!-- This is needed for CEX.IO -->
     </Api>
-      
+    
     <!-- Algo -->
-    <BaseCurrency>BTC</BaseCurrency>
-    <FundCurrency>USD</FundCurrency>
+    <BaseCurrency>eth</BaseCurrency>
+    <FundCurrency>usd</FundCurrency>
     <MinBaseToTrade>0.001</MinBaseToTrade>
     <MinFundToTrade>2.5</MinFundToTrade>
     <ExecuteInterval>30</ExecuteInterval>  <!-- Interval between bot iterations in seconds-->
-    <FiatCheckInterval>60</FiatCheckInterval> <!-- Fiat check interval in minutes -->
-    <HoursToAnalyze>1</HoursToAnalyze>
+    <HoursToAnalyze>3</HoursToAnalyze>
     <RangeCorrectionInterval>AtTrade</RangeCorrectionInterval>  <!-- "AtTrade" or Interval between range corrections in seconds-->
-    <SellPercent>0.4</SellPercent>
-    <BuyPercent>0.4</BuyPercent>
+    <SellPercent>0.5</SellPercent>
+    <BuyPercent>0.5</BuyPercent>
 
     <AllowSellCancel>True</AllowSellCancel> <!-- Allow cancel sell order if price was "far away" for long time -->
     <SellCancelHours>72</SellCancelHours>

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TemamaTradingConfig>
+  <Bot name="Sheriff" displayName="example" autostart="true">
+    <Api exchange="Kuna">
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+    
+    <BaseCurrency>btc</BaseCurrency>
+    <FundCurrency>uah</FundCurrency>
+    <MinBaseToTrade>0.0001</MinBaseToTrade>
+    <MinFundToTrade>5.0</MinFundToTrade>
+    <ExecuteInterval>30</ExecuteInterval>   <!-- Interval between bot iterations in seconds-->
+    <SellFarPercent>1.2</SellFarPercent>
+    <SellNearPercent>0.5</SellNearPercent>
+    <BuyNearPercent>0.5</BuyNearPercent>
+    <BuyFarPercent>1.2</BuyFarPercent>
+    <AllowAutoBalanceTrades>true</AllowAutoBalanceTrades>
+    <ImbalanceValue>100.0</ImbalanceValue>   <!-- Example: if (BTC*Price)/UAH>ImbalanceValue or UAH/(BTC*Price)>ImbalanceValue - need to buy or sell to make (BTC*Price)~=UAH -->
+  </Bot>
+</TemamaTradingConfig>

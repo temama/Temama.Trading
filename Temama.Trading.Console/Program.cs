@@ -1,23 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Algo;
 using Temama.Trading.Core.Algo;
-using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
 using Temama.Trading.Core.Reporting;
-using Temama.Trading.Core.Web;
-using Temama.Trading.Exchanges.Cex;
-using Temama.Trading.Exchanges.Kuna;
+using Temama.Trading.Core.Utils;
+using Temama.Trading.Exchanges;
 
 namespace Temama.Trading.Console
 {
     public class Program
     {
-        private static Algorithm _algo;
+        private static TradingBot _algo;
 
         public class LoggerConsoleEcho : ILogHandler
         {
@@ -76,80 +78,62 @@ namespace Temama.Trading.Console
 
         public static void Main(string[] args)
         {
-            var sParams = LoadArguments(args);
-            var file = string.Format("{0}_{1}_{2}{3}{4}", sParams["algo"], sParams["exchange"], sParams["base"], sParams["fund"],
-                sParams.ContainsKey("configsuffix") ? sParams["configsuffix"] : string.Empty);
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+            var configFile = "TradingConfig.xml";
+            if (args.Length > 0)
+                configFile = args[0];
 
-            Logger.Init(file, new LoggerConsoleEcho());
-            System.AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+            Logger.CleanupLogsDir(10);
+            var logHandler = new LoggerConsoleEcho();
+            Globals.Logger.Init("Temama.Trading.Console", logHandler);
+            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;
+
+            ExchangesHelper.RegisterExchanges();
+            AlgoHelper.InitAlgos();
+
             var config = new XmlDocument();
-            config.Load(file + ".xml");
+            config.Load(configFile);
+            var algos = ConfigHelper.GetAlgosFromConfig(config, logHandler);
+            var caption = new StringBuilder();
+            var processes = new List<Task>();
 
-            WebServer reportServer = null;
-            try
+            foreach (var algo in algos.Where(a => a.AutoStart))
             {
-                reportServer = new WebServer(SendReport, 8877, "/TemamaTrading/Report/");
-                reportServer.Run();
-            }
-            catch (Exception ex)
-            {
-                Logger.Critical("Failed to start reporting server: " + ex.Message);
+                caption.Append(algo.WhoAmI + "; ");
+                processes.Add(algo.Start());
             }
 
-            IExchangeApi api;
-            switch (sParams["exchange"].ToLower())
-            {
-                case "kuna":
-                    api = new KunaApi();
-                    break;
-                case "cex":
-                    api = new CexApi();
-                    break;
-                default:
-                    throw new Exception(string.Format("Unknown Exchange {0}", sParams["exchange"]));
-            }
-            api.Init(config);
+            //WebServer reportServer = null;
+            //try
+            //{
+            //    reportServer = new WebServer(SendReport, 8877, "/TemamaTrading/Report/");
+            //    reportServer.Run();
+            //}
+            //catch (Exception ex)
+            //{
+            //    globalLog.Critical("Failed to start reporting server: " + ex.Message);
+            //}
 
-            switch (sParams["algo"].ToLower())
-            {
-                case "sheriff":
-                    _algo = new Sheriff();
-                    break;
-                case "ranger":
-                    _algo = new Ranger();
-                    break;
-                case "rangerpro":
-                    _algo = new RangerPro();
-                    break;
-                case "shaper":
-                    _algo = new Shaper();
-                    break;
-                default:
-                    throw new Exception(string.Format("Unknown Algorithm {0}", sParams["algo"]));
-            }
-            _algo.Init(api, config);
+            System.Console.Title = "Trading.Console: " + caption;
 
-            System.Console.Title = string.Format("{0} on {1}. Config: {2}", sParams["algo"], sParams["exchange"], file);
-            
-            var t = _algo.StartTrading();
-            t.Wait();
+            Task.WaitAll(processes.ToArray());
 
-            if (reportServer != null)
-                reportServer.Stop();
+            //if (reportServer != null)
+            //    reportServer.Stop();
         }
 
         private static string SendReport(HttpListenerRequest request)
         {
             var resp = new StringBuilder();
             resp.Append("<HTML><BODY><h1>Temama Trading</h1><br>");
-            resp.Append(HtmlReportHelper.ReportRunningBots(new List<Algorithm>() { _algo }));
+            resp.Append(HtmlReportHelper.ReportRunningBots(new List<TradingBot>() { _algo }));
             resp.Append("</BODY></HTML>");
             return resp.ToString();
         }
 
         private static void UnhandledExceptionTrapper(object sender, UnhandledExceptionEventArgs e)
         {
-            Logger.Critical("Unhandled exception: " + e.ExceptionObject.ToString());
+            Globals.Logger.Critical("Unhandled exception: " + e.ExceptionObject.ToString());
             NotificationManager.SendError("Console", "Unhandled exception: " + e.ExceptionObject.ToString());
         }
     }

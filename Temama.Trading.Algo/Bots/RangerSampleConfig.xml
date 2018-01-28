@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TemamaTradingConfig>
+  <Bot name="Range" displayName="example" autostart="true">
+    <Api exchange="Cex">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+      <UserID>up0000000</UserID> <!-- This is needed for CEX.IO -->
+    </Api>
+      
+    <!-- Algo -->
+    <BaseCurrency>eth</BaseCurrency>
+    <FundCurrency>usd</FundCurrency>
+    <MinBaseToTrade>0.001</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>
+    <ExecuteInterval>30</ExecuteInterval>  <!-- Interval between bot iterations in seconds-->
+    <PriceToSell>336</PriceToSell>
+    <PriceToBuy>332</PriceToBuy>
+  </Bot>
+</TemamaTradingConfig>

@@ -9,18 +9,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="RangerProSampleConfig.xml">
+    <None Update="Bots\RangerProSampleConfig.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="RangerSampleConfig.xml">
+    <None Update="Bots\RangerSampleConfig.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="ShaperSampleConfig.xml">
+    <None Update="Bots\ShaperSampleConfig.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="SheriffSampleConfig.xml">
+    <None Update="Bots\SheriffSampleConfig.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Monitors\" />
   </ItemGroup>
 
 </Project>
