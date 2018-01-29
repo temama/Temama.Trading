@@ -14,25 +14,25 @@
         <USD>500.0</USD>
       </InitialFunds>
     </Api>
-      
+
     <!-- Algo -->
     <BaseCurrency>BTC</BaseCurrency>
     <FundCurrency>USD</FundCurrency>
     <MinBaseToTrade>0.001</MinBaseToTrade>
     <MinFundToTrade>2.5</MinFundToTrade>
-    <ExecuteInterval>30</ExecuteInterval>  <!-- Interval between bot iterations in seconds-->
-    <FiatCheckInterval>60</FiatCheckInterval> <!-- Fiat check interval in minutes -->
-    <HoursToAnalyze>1</HoursToAnalyze>
-    <RangeCorrectionInterval>AtTrade</RangeCorrectionInterval>  <!-- "AtTrade" or Interval between range corrections in seconds-->
-    <SellPercent>0.4</SellPercent>
-    <BuyPercent>0.4</BuyPercent>
+    <ExecuteInterval>30</ExecuteInterval>    <!-- Interval between bot iterations in seconds-->
+    <FiatCheckInterval>180</FiatCheckInterval>    <!-- Fiat check interval in minutes -->
+    <HoursToAnalyze>3</HoursToAnalyze>
+    <RangeCorrectionInterval>AtTrade</RangeCorrectionInterval>    <!-- "AtTrade" or Interval between range corrections in seconds-->
+    <SellPercent>0.9</SellPercent>
+    <BuyPercent>0.9</BuyPercent>
 
-    <AllowSellCancel>True</AllowSellCancel> <!-- Allow cancel sell order if price was "far away" for long time -->
+    <AllowSellCancel>True</AllowSellCancel>    <!-- Allow cancel sell order if price was "far away" for long time -->
     <SellCancelHours>72</SellCancelHours>
-    <SellCancelDistancePercent>10</SellCancelDistancePercent>
+    <SellCancelDistancePercent>3</SellCancelDistancePercent>
 
-    <AllowBuyCancel>True</AllowBuyCancel> <!-- Allow cancel buy order if price was "far away" for long time -->
-    <BuyCancelHours>24</BuyCancelHours>
-    <BuyCancelDistancePercent>5</BuyCancelDistancePercent>
+    <AllowBuyCancel>True</AllowBuyCancel>    <!-- Allow cancel buy order if price was "far away" for long time -->
+    <BuyCancelHours>12</BuyCancelHours>
+    <BuyCancelDistancePercent>3</BuyCancelDistancePercent>
   </Bot>
 </TemamaTradingConfig>

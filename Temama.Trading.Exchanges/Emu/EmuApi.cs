@@ -51,10 +51,10 @@ namespace Temama.Trading.Exchanges.Emu
                 _userFunds.Values.Add(curr, value);
             }
 
-            _log.Info("EmuApi.Init: Loading data from " + historicalFile);
+            _log.Important("EmuApi.Init: Loading data from " + historicalFile);
             LoadHistoricalData(historicalFile);
 
-            _log.Info($"EmuApi.Init: Loaded data from {_ticksStartDate} to {_ticksEndDate}");
+            _log.Important($"EmuApi.Init: Loaded data from {_ticksStartDate} to {_ticksEndDate}");
         }
         
         public void SetIterationTime(DateTime time)
@@ -244,7 +244,6 @@ namespace Temama.Trading.Exchanges.Emu
                 Side = side
             };
             _userOrders.Add(res);
-            _log.Important("EmuApi.PlaceOrder: Placed order: " + res.ToString());
 
             if ((side == "sell" && res.Price <= _ticks[_currentTick].Last) ||
                 (side == "buy" && res.Price >= _ticks[_currentTick].Last))

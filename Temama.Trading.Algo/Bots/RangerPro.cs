@@ -93,7 +93,7 @@ namespace Temama.Trading.Algo
                 }
 
                 var order = _api.PlaceOrder(_base, _fund, "sell", 
-                    _api.GetRoundedSellVolume(GetAlmostAllBases(funds.Values[_base])), _priceToSell);
+                    _api.GetRoundedSellVolume(GetAlmolstAll(funds.Values[_base])), _priceToSell);
                 NotifyOrderPlaced(order);
             }
 
@@ -105,7 +105,7 @@ namespace Temama.Trading.Algo
                     CorrectRange(stats, iterationTime);
                 }
 
-                var amount = _api.CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(funds.Values[_fund]));
+                var amount = _api.CalculateBuyVolume(_priceToBuy, GetAlmolstAll(funds.Values[_fund]));
                 if (amount > _minBaseToTrade)
                 {
                     _log.Info("RangerPro: Can place buy order...");

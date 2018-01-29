@@ -131,6 +131,7 @@ namespace Temama.Trading.Core.Algo
         public virtual void Emulate(DateTime start, DateTime end)
         {
             var emu = _api as IExchangeEmulator;
+            _emulation = true;
             _emulationDateTime = start;
             emu.SetIterationTime(_emulationDateTime);
             Running = true;
@@ -139,6 +140,13 @@ namespace Temama.Trading.Core.Algo
             {
                 _log.Spam("Emulation: Iter Time: " + _emulationDateTime);
                 emu.SetIterationTime(_emulationDateTime);
+                if (_emulationDateTime - _lastFiatBalanceCheckTime > _FiatBalanceCheckInterval)
+                {
+                    var balance = GetFiatBalance();
+                    _log.Important($"Emulation time: {_emulationDateTime}; Price={_lastPrice}");
+                    _log.Important($"Fiat balance: {balance}");
+                    _lastFiatBalanceCheckTime = _emulationDateTime;
+                }
                 DoTradingIteration(_emulationDateTime);
                 _emulationDateTime = _emulationDateTime.AddSeconds(_interval);
             }
@@ -267,12 +275,12 @@ namespace Temama.Trading.Core.Algo
             return false;
         }
 
-        protected virtual double GetAlmolstAllFunds(double funds)
-        {
-            return funds - funds * 0.01;
-        }
-
-        protected virtual double GetAlmostAllBases(double amount)
+        /// <summary>
+        /// Not to over exceed available amout during orders placement (after rounding at API level)
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        protected virtual double GetAlmolstAll(double amount)
         {
             return amount - amount * 0.01;
         }
@@ -282,16 +290,17 @@ namespace Temama.Trading.Core.Algo
         /// </summary>
         /// <param name="expectedBaseAmount"></param>
         /// <returns></returns>
-        protected virtual double GetAllowedBaseAmount(double expectedBaseAmount = double.MaxValue)
+        protected virtual double GetLimitedBaseAmount(double expectedBaseAmount = double.MaxValue)
         {
             _iterationStatsUpdated = false;
             var totalFiat = GetFiatBalance();
-            var last = _lastPrice;
             var allowed = _maxFundsToOperate - totalFiat;
             if (allowed <= 0)
                 return 0;
 
-            return Math.Min(allowed / last, expectedBaseAmount);
+            var existing = _funds.Values[_base];
+
+            return Math.Min(existing, Math.Min(allowed / _lastPrice, expectedBaseAmount));
         }
 
         /// <summary>
@@ -299,16 +308,17 @@ namespace Temama.Trading.Core.Algo
         /// </summary>
         /// <param name="expectedFundsAmount"></param>
         /// <returns></returns>
-        protected virtual double GetAllowedFundsAmount(double expectedFundsAmount = double.MaxValue)
+        protected virtual double GetLimitedFundsAmount(double expectedFundsAmount = double.MaxValue)
         {
             _iterationStatsUpdated = false;
             var totalFiat = GetFiatBalance();
-            var last = _lastPrice;
             var allowed = _maxFundsToOperate - totalFiat;
             if (allowed <= 0)
                 return 0;
 
-            return Math.Min(allowed, expectedFundsAmount);
+            var existing = _funds.Values[_fund];
+
+            return Math.Min(existing, Math.Min(allowed, expectedFundsAmount));
         }
 
         protected virtual void PrintSummary()

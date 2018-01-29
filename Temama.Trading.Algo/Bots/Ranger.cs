@@ -31,19 +31,19 @@ namespace Temama.Trading.Algo
             if (!_iterationStatsUpdated)
                 UpdateIterationStats();
 
-            var allowedBase = GetAllowedBaseAmount();
-            var allowedFund = GetAllowedFundsAmount();
+            var allowedBase = GetLimitedBaseAmount();
+            var allowedFund = GetLimitedFundsAmount();
             if (allowedBase > _minBaseToTrade)
             {
                 _log.Info("Ranger: Can place sell order...");
                 var order = _api.PlaceOrder(_base, _fund, "sell", 
-                    _api.GetRoundedSellVolume(GetAlmostAllBases(allowedBase)), _priceToSell);
+                    _api.GetRoundedSellVolume(GetAlmolstAll(allowedBase)), _priceToSell);
                 NotifyOrderPlaced(order);
             }
 
             if (allowedFund > _minFundToTrade)
             {
-                var amount = _api.CalculateBuyVolume(_priceToBuy, GetAlmolstAllFunds(allowedFund));
+                var amount = _api.CalculateBuyVolume(_priceToBuy, GetAlmolstAll(allowedFund));
                 if (amount > _minBaseToTrade)
                 {
                     _log.Info("Ranger: Can place buy order...");

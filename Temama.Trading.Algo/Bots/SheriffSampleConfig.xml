@@ -17,5 +17,6 @@
     <BuyFarPercent>1.2</BuyFarPercent>
     <AllowAutoBalanceTrades>true</AllowAutoBalanceTrades>
     <ImbalanceValue>100.0</ImbalanceValue>   <!-- Example: if (BTC*Price)/UAH>ImbalanceValue or UAH/(BTC*Price)>ImbalanceValue - need to buy or sell to make (BTC*Price)~=UAH -->
+    <GameDuration>24</GameDuration>
   </Bot>
 </TemamaTradingConfig>

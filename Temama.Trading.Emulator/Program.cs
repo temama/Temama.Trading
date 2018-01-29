@@ -57,6 +57,8 @@ namespace Temama.Trading.Emulator
 
         static void Main(string[] args)
         {
+            Logger.WriteToFile = false;
+            
             Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
             var configFile = "EmulationConfig.xml";
             if (args.Length > 0)
@@ -90,7 +92,7 @@ namespace Temama.Trading.Emulator
             
             Task.WaitAll(processes.ToArray());
 
-            Globals.Logger.Info("Emulation completted");
+            Globals.Logger.Important("Emulation completted");
             Console.ReadKey();
         }
 

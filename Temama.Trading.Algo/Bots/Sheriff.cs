@@ -24,6 +24,7 @@ namespace Temama.Trading.Algo
         private double _buyNearPercent;
         private double _buyFarPercent;
         private bool _allowAutoBalanceOrders = false; // refer to description of _imbalanceValue;       
+        private TimeSpan _gameDuration = TimeSpan.FromHours(24);
 
         public override string Name()
         {
@@ -41,6 +42,7 @@ namespace Temama.Trading.Algo
             _buyFarPercent = Convert.ToDouble(config.GetConfigValue("BuyFarPercent"), CultureInfo.InvariantCulture) * 0.01;
             _allowAutoBalanceOrders = Convert.ToBoolean(config.GetConfigValue("AllowAutoBalanceTrades"));
             _imbalanceValue = Convert.ToDouble(config.GetConfigValue("ImbalanceValue"), CultureInfo.InvariantCulture);
+            _gameDuration = TimeSpan.FromHours(Convert.ToDouble(config.GetConfigValue("GameDuration"), CultureInfo.InvariantCulture));
 
             _pair = _base + _fund;
         }
@@ -49,61 +51,58 @@ namespace Temama.Trading.Algo
         {
             if (!_iterationStatsUpdated)
                 UpdateIterationStats();
-            
-            // 1. Check for imbalance. If we have much more of one currency then another -
-            //        current algorithm may be not efficient
-            if (_openOrders.Count == 0 && _allowAutoBalanceOrders)
+
+            // 0. If game over
+            var newGame = _openOrders.Count == 0;
+            foreach (var order in _openOrders)
             {
-                if (!BalanceFunds())
+                if (dateTime - order.CreatedAt > _gameDuration)
                 {
-                    // If we are here - there is imbalance, but
-                    // no orders with acceptable price to fix this
-                    // Skipping iteration so far
-                    return;
+                    newGame = true;
+                    break;
                 }
-                UpdateIterationStats();
+            }
+
+            if (newGame)
+            {
+                _log.Important("Starting new game...");
+                if (_openOrders.Count > 0)
+                {
+                    _log.Info("Open orders will be cancelled");
+                    foreach (var order in _openOrders)
+                    {
+                        _api.CancellOrder(order);
+                        NotifyOrderCancel(order);
+                    }
+                }
+
+                // 1. Check for imbalance. If we have much more of one currency then another -
+                //        current algorithm may be not efficient
+                if (_openOrders.Count == 0 && _allowAutoBalanceOrders)
+                {
+                    if (!BalanceFunds())
+                    {
+                        // If we are here - there is imbalance, but
+                        // no orders with acceptable price to fix this
+                        // Skipping iteration so far
+                        return;
+                    }
+                    UpdateIterationStats();
+                }
             }
             
             // 2. If we have no buy orders and have many (>2) sell orders, convert far away sell orders to funds. And vice versa
-            var _buyOrders = _openOrders.Where(o => o.Side == "buy").ToList();
-            var _sellOrders = _openOrders.Where(o => o.Side == "sell").ToList();
-            
-            if (_buyOrders.Count == 0 && _sellOrders.Count > 2)
-            {
-                _log.Info("Converting far away sell order to fund currency");
-                _sellOrders.Sort(Order.SortByPrice);
-                var sum = 0.0;
-                for (int i = 2; i < _sellOrders.Count; i++)
-                {
-                    sum += _sellOrders[i].Volume;
-                    _api.CancellOrder(_sellOrders[i]);
-                    NotifyOrderCancel(_sellOrders[i]);
-                }
-                SellByMarketPrice(sum);
-            }
-
-            if (_sellOrders.Count == 0 && _buyOrders.Count > 2)
-            {
-                _log.Info("Converting far away buy orders to base currency");
-                _buyOrders.Sort(Order.SortByPriceDesc);
-                var sum = 0.0;
-                for (int i = 2; i < _buyOrders.Count; i++)
-                {
-                    sum += _buyOrders[i].Price * _buyOrders[i].Volume;
-                    _api.CancellOrder(_buyOrders[i]);
-                    NotifyOrderCancel(_buyOrders[i]);
-                }
-                BuyByMarketPrice(sum);
-            }
+            var _buyOrders = _openOrders.Where(o => o.Side == "buy");
+            var _sellOrders = _openOrders.Where(o => o.Side == "sell");
             
             // 3. Place buy/sell orders if possible
-            PlaceBuyOrders();
-            PlaceSellOrders();
+            PlaceBuyOrders(_buyOrders.Count() == 0);
+            PlaceSellOrders(_sellOrders.Count() == 0);
         }
         
-        private void PlaceBuyOrders()
+        private void PlaceBuyOrders(bool splitAmount)
         {
-            var amount = GetAllowedFundsAmount();
+            var amount = GetAlmolstAll(GetLimitedFundsAmount());
             var last = _lastPrice;
 
             if (amount<_minFundToTrade)
@@ -112,7 +111,7 @@ namespace Temama.Trading.Algo
                 return;
             }
 
-            if (amount > _minFundToTrade * 2)
+            if (splitAmount && amount > _minFundToTrade * 2)
             {
                 amount = amount / 2;
                 var order = _api.PlaceOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyNearPercent, amount),
@@ -130,9 +129,9 @@ namespace Temama.Trading.Algo
             }
         }
 
-        private void PlaceSellOrders()
+        private void PlaceSellOrders(bool splitAmount)
         {
-            var amount = GetAllowedBaseAmount();
+            var amount = GetAlmolstAll(GetLimitedBaseAmount());
             var last = _lastPrice;
 
             if (amount < _minBaseToTrade)
@@ -141,7 +140,7 @@ namespace Temama.Trading.Algo
                 return;
             }
 
-            if (amount > _minBaseToTrade * 2)
+            if (splitAmount && amount > _minBaseToTrade * 2)
             {
                 amount = amount / 2;
                 var order = _api.PlaceOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(amount),
