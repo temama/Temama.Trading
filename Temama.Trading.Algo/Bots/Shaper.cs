@@ -105,8 +105,8 @@ namespace Temama.Trading.Algo.Bots
         {
             var res = "";
             var firstTime = DateTime.UtcNow.AddHours(_utcOffset).AddSeconds(-1 * _candleTime * (_candlesToAnalize + 1));
-            var stats = _analitics.GetRecentPrices(_base, _fund, firstTime);
-            var candles = CandlestickHelper.TicksToCandles(stats, TimeSpan.FromSeconds(_candleTime));
+            var stats = _analitics.GetRecentTrades(_base, _fund, firstTime);
+            var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromSeconds(_candleTime));
             foreach (var candle in candles)
             {
                 _log.Info(candle.ToString());

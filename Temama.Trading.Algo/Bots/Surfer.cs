@@ -64,8 +64,8 @@ namespace Temama.Trading.Algo.Bots
 
         private double CalculatePriceChange(DateTime iterationTime)
         {
-            var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddMinutes(-1 * _minutesToAnalize));
-            stats.Sort(Tick.DateTimeAscSorter);
+            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _minutesToAnalize));
+            stats.Sort(Trade.SortByDate);
             var count = stats.Count;
             var minPrice = double.MaxValue;
             var maxPrice = double.MinValue;
@@ -74,7 +74,7 @@ namespace Temama.Trading.Algo.Bots
             var sumWeight = 0.0;
             for (int i = 0; i < count; i++)
             {
-                var price = stats[i].Last;
+                var price = stats[i].Price;
                 if (price < minPrice)
                     minPrice = price;
                 if (price > maxPrice)

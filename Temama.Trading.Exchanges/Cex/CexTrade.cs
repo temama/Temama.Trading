@@ -11,6 +11,8 @@ namespace Temama.Trading.Exchanges.Cex
 {
     public class CexTrade : Trade
     {
+        public double Funds { get; set; }
+
         public static CexTrade FromJson(JObject json)
         {
             var res = new CexTrade()

@@ -130,26 +130,22 @@ namespace Temama.Trading.Exchanges.Kuna
             return trades;
         }
         
-        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 100)
+        public List<Trade> GetRecentTrades(string baseCur, string fundCur, DateTime fromDate)
         {
             var uri = _baseUri + "trades?market=" + baseCur.ToLower() + fundCur.ToLower();
             var response = WebApi.Query(uri);
 
-            var ticks = new List<Tick>(maxResultCount);
+            var trades = new List<Trade>();
             var json = JArray.Parse(response);
-            foreach (var jTick in json)
+            foreach (JObject jTrade in json)
             {
-                var time = DateTime.Parse((jTick["created_at"] as JValue).Value.ToString());
+                var time = DateTime.Parse((jTrade["created_at"] as JValue).Value.ToString());
                 if (time >= fromDate)
                 {
-                    ticks.Add(new Tick()
-                    {
-                        Time = time,
-                        Last = Convert.ToDouble(jTick["price"].ToString(), CultureInfo.InvariantCulture)
-                    });
+                    trades.Add(KunaTrade.FromJson(jTrade));
                 }
             }
-            return ticks;
+            return trades;
         }
 
         /// <summary>

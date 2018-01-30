@@ -131,26 +131,22 @@ namespace Temama.Trading.Exchanges.Cex
         }
 
 
-        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 1000)
+        public List<Trade> GetRecentTrades(string baseCur, string fundCur, DateTime fromDate)
         {
             var uri = _baseUri + "trade_history/" + baseCur.ToUpper() + "/" + fundCur.ToUpper();
             var response = WebApi.Query(uri);
 
-            var ticks = new List<Tick>(maxResultCount);
+            var trades = new List<Trade>();
             var json = JArray.Parse(response);
-            foreach (var jTick in json)
+            foreach (JObject jTrade in json)
             {
-                var time = UnixTime.FromUnixTime(Convert.ToInt64(jTick["date"].ToString()));
+                var time = UnixTime.FromUnixTime(Convert.ToInt64(jTrade["date"].ToString()));
                 if (time >= fromDate)
                 {
-                    ticks.Add(new Tick()
-                    {
-                        Time = time,
-                        Last = Convert.ToDouble(jTick["price"].ToString(), CultureInfo.InvariantCulture)
-                    });
+                    trades.Add(CexTrade.FromJson(jTrade));
                 }
             }
-            return ticks;
+            return trades;
         }
 
         private string UserQuery(string path, Dictionary<string, string> args)

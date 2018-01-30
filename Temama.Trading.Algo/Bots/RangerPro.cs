@@ -73,7 +73,7 @@ namespace Temama.Trading.Algo.Bots
         {
             if (iterationTime - _lastRangeCorrectionTime > _rangeCorrectionInterval)
             {
-                var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
+                var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
                 if (!_correctRangeEachTrade)
                     CorrectRange(stats, iterationTime);
                 CancelFarAwayOrders(stats, iterationTime);
@@ -88,7 +88,7 @@ namespace Temama.Trading.Algo.Bots
 
                 if (_correctRangeEachTrade)
                 {
-                    var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
+                    var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
                     CorrectRange(stats, iterationTime);
                 }
 
@@ -101,7 +101,7 @@ namespace Temama.Trading.Algo.Bots
             {
                 if (_correctRangeEachTrade)
                 {
-                    var stats = _analitics.GetRecentPrices(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
+                    var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddHours(-1 * _hoursToAnalyze));
                     CorrectRange(stats, iterationTime);
                 }
 
@@ -114,12 +114,20 @@ namespace Temama.Trading.Algo.Bots
                 }
             }
         }
-        
-        private void CorrectRange(List<Tick> stats, DateTime iterationTime)
+
+        protected override bool IsStopLoss(Order order, double price)
+        {
+            var placedPrice = order.Price / (1 + _percentToSell);
+            if (price <= placedPrice - placedPrice * _stopLossPercent)
+                return true;
+            return false;
+        }
+
+        private void CorrectRange(List<Trade> stats, DateTime iterationTime)
         {
             _log.Info("RangerPro: Range correction...");
 
-            stats.Sort(SortTickAscByDateTime);
+            stats.Sort(Trade.SortByDate);
             var count = stats.Count;
             var minPrice = double.MaxValue;
             var maxPrice = double.MinValue;
@@ -128,7 +136,7 @@ namespace Temama.Trading.Algo.Bots
             var sumWeight = 0.0;
             for (int i = 0; i < count; i++)
             {
-                var price = stats[i].Last;
+                var price = stats[i].Price;
                 if (price < minPrice)
                     minPrice = price;
                 if (price > maxPrice)
@@ -158,8 +166,8 @@ namespace Temama.Trading.Algo.Bots
                     var closest = double.MaxValue;
                     foreach (var tick in stats)
                     {
-                        if (Math.Abs(ord.Price - tick.Last) < closest)
-                            closest = Math.Abs(ord.Price - tick.Last);
+                        if (Math.Abs(ord.Price - tick.Price) < closest)
+                            closest = Math.Abs(ord.Price - tick.Price);
                     }
                     _log.Info(string.Format("WARN: for last {0} hours closest price diff with [{1}] order was:{2}",
                         _hoursToAnalyze, ord, closest));
@@ -176,7 +184,7 @@ namespace Temama.Trading.Algo.Bots
             else return 0;
         }
         
-        private void CancelFarAwayOrders(List<Tick> stats, DateTime iterationTime)
+        private void CancelFarAwayOrders(List<Trade> stats, DateTime iterationTime)
         {
             var orders = _api.GetMyOrders(_base, _fund);
             var last = _api.GetLastPrice(_base, _fund);
@@ -193,7 +201,7 @@ namespace Temama.Trading.Algo.Bots
 
                         foreach(var tick in stats)
                         {
-                            if (tick.Last > allowedPrice)
+                            if (tick.Price > allowedPrice)
                             {
                                 needToCancel = false;
                                 break;
@@ -222,7 +230,7 @@ namespace Temama.Trading.Algo.Bots
 
                         foreach (var tick in stats)
                         {
-                            if (tick.Last < allowedPrice)
+                            if (tick.Price < allowedPrice)
                             {
                                 needToCancel = false;
                                 break;

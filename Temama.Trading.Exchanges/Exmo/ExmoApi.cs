@@ -40,12 +40,7 @@ namespace Temama.Trading.Exchanges.Exmo
         {
             throw new System.NotImplementedException();
         }
-
-        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 1000)
-        {
-            throw new NotImplementedException();
-        }
-
+        
         public void SetIterationTime(DateTime time)
         {
             throw new NotImplementedException();
@@ -70,7 +65,11 @@ namespace Temama.Trading.Exchanges.Exmo
         {
             throw new System.NotImplementedException();
         }
-
+        
+        public List<Trade> GetRecentTrades(string baseCur, string fundCur, DateTime fromDate)
+        {
+            throw new NotImplementedException();
+        }
 
         protected override Order PlaceOrderImpl(string baseCur, string fundCur, string side, double volume, double price)
         {

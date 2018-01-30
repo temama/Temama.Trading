@@ -11,13 +11,13 @@ namespace Temama.Trading.Core.Algo
     {
 
         /// <summary>
-        /// Generates Candlestick ticks. NOTE: it sorts ticks by date/time
+        /// Generates Candlestick ticks. NOTE: it sorts trades by date/time
         /// Max candleWidth = 1d
         /// </summary>
-        /// <param name="ticks"></param>
+        /// <param name="trades"></param>
         /// <param name="candleWidth"></param>
         /// <returns></returns>
-        public static List<Candlestick> TicksToCandles(List<Tick> ticks, TimeSpan candleWidth)
+        public static List<Candlestick> TradesToCandles(List<Trade> trades, TimeSpan candleWidth)
         {
             if (candleWidth < TimeSpan.FromSeconds(1))
                 throw new Exception(string.Format("TicksToCandles: Too little candle with: {0}", candleWidth));
@@ -26,51 +26,79 @@ namespace Temama.Trading.Core.Algo
                 throw new Exception(string.Format("TicksToCandles: Too wide candle with: {0}. Use GroupCandlesticks method to gerate wider candlesticks", candleWidth));
 
             var res = new List<Candlestick>();
-            if (ticks == null || ticks.Count == 0)
+            if (trades == null || trades.Count == 0)
                 return res;
 
-            ticks.Sort(Tick.DateTimeAscSorter);
+            trades.Sort(Trade.SortByDate);
 
-            var nextTime = ticks[0].Time.Date;
-            while (nextTime < ticks[0].Time)
+            var nextTime = trades[0].CreatedAt.Date;
+            while (nextTime < trades[0].CreatedAt)
             {
                 nextTime += candleWidth;
             }
 
-            var current = new Candlestick(nextTime - candleWidth, nextTime, ticks[0].Last);
-            var price = 0.0;
-            for (int i = 0; i < ticks.Count - 1; i++)
+            var current = new Candlestick(nextTime - candleWidth, nextTime);
+            for (int i = 0; i < trades.Count - 1; i++)
             {
-                price = ticks[i].Last;
-                if (price > current.High)
-                    current.High = price;
-                if (price < current.Low)
-                    current.Low = price;
+                current.Append(trades[i]);
 
-                if (ticks[i + 1].Time > nextTime)
+                if (trades[i + 1].CreatedAt > nextTime)
                 {
-                    current.Close = ticks[i].Last;
+                    current.Completed = true;
                     res.Add(current);
 
                     // Checking for flat candles
-                    while (nextTime + candleWidth < ticks[i + 1].Time)
+                    while (nextTime + candleWidth < trades[i + 1].CreatedAt)
                     {
-                        res.Add(new Candlestick(nextTime, nextTime + candleWidth, ticks[i].Last));
+                        res.Add(new Candlestick(nextTime, nextTime + candleWidth, trades[i].Price));
                         nextTime += candleWidth;
                     }
 
-                    current = new Candlestick(nextTime, nextTime + candleWidth, ticks[i + 1].Last);
+                    current = new Candlestick(nextTime, nextTime + candleWidth);
                     nextTime += candleWidth;
                 }
             }
 
             // ... and for last tick
-            price = ticks[ticks.Count - 1].Last;
-            if (price > current.High)
-                current.High = price;
-            if (price < current.Low)
-                current.Low = price;
+            current.Append(trades[trades.Count - 1]);
+            //TODO: check if completed
+            res.Add(current);
 
+            return res;
+        }
+
+        public static List<Candlestick> TradesToCandlesNoTime(List<Trade> trades, TimeSpan candleWidth)
+        {
+            var res = new List<Candlestick>();
+            if (trades == null || trades.Count == 0)
+                return res;
+
+            var nextTime = trades[0].CreatedAt.Date + candleWidth;
+            var current = new Candlestick(trades[0].CreatedAt.Date, nextTime);
+            for (int i = 0; i < trades.Count - 1; i++)
+            {
+                current.Append(trades[i]);
+
+                if (trades[i + 1].CreatedAt > nextTime)
+                {
+                    current.Completed = true;
+                    res.Add(current);
+
+                    // Checking for flat candles
+                    while (nextTime + candleWidth < trades[i + 1].CreatedAt)
+                    {
+                        res.Add(new Candlestick(nextTime, nextTime + candleWidth, trades[i].Price));
+                        nextTime += candleWidth;
+                    }
+
+                    current = new Candlestick(nextTime, nextTime + candleWidth);
+                    nextTime += candleWidth;
+                }
+            }
+
+            // ... and for last tick
+            current.Append(trades[trades.Count - 1]);
+            //TODO: check if completed
             res.Add(current);
 
             return res;

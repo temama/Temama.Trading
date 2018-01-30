@@ -11,6 +11,8 @@ namespace Temama.Trading.Exchanges.Kuna
 {
     public class KunaTrade : Trade
     {
+        public double Funds { get; set; }
+
         public static KunaTrade FromJson(JObject json)
         {
             return new KunaTrade()

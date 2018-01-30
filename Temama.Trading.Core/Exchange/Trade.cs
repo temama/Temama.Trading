@@ -12,7 +12,6 @@ namespace Temama.Trading.Core.Exchange
         public string Pair { get; set; }
         public double Price { get; set; }
         public double Volume { get; set; }
-        public double Funds { get; set; }
         public DateTime CreatedAt { get; set; }
         public string Side { get; set; }
 
@@ -29,6 +28,19 @@ namespace Temama.Trading.Core.Exchange
             else if (second.CreatedAt < first.CreatedAt)
                 return 1;
             else return 0;
+        }
+
+        public Trade Clone()
+        {
+            return new Trade
+            {
+                Id = Id,
+                Pair = Pair,
+                Price = Price,
+                Volume = Volume,
+                CreatedAt = CreatedAt,
+                Side = Side
+            };
         }
 
         public override string ToString()

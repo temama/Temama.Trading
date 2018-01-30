@@ -26,7 +26,7 @@ namespace Temama.Trading.Exchanges.Emu
         private string _base;
         private string _fund;
 
-        private List<Tick> _ticks = new List<Tick>();
+        private List<Trade> _trades = new List<Trade>();
         private List<Order> _userOrders = new List<Order>();
         private List<Trade> _userTrades = new List<Trade>();
 
@@ -36,7 +36,7 @@ namespace Temama.Trading.Exchanges.Emu
         protected override void Init(XmlNode config)
         {
             _publicOnly = false;
-            _ticks = new List<Tick>();
+            _trades = new List<Trade>();
             _userOrders = new List<Order>();
             _userTrades = new List<Trade>();
             
@@ -71,18 +71,18 @@ namespace Temama.Trading.Exchanges.Emu
 
         public void EmulateExchangeOperations(DateTime byTime)
         {
-            for (int i = _currentTick; i < _ticks.Count-1; i++)
+            for (int i = _currentTick; i < _trades.Count-1; i++)
             {
                 ProcessUserOrders(i);
 
-                if (_ticks[i+1].Time > byTime)
+                if (_trades[i+1].CreatedAt > byTime)
                 {
                     _currentTick = i;
                     break;
                 }
             }
 
-            if (_currentTick >= _ticks.Count - 1)
+            if (_currentTick >= _trades.Count - 1)
             {
                 _log.Info("Current funds: " + _userFunds);
                 throw new Exception("EmuApi.EmulateExchangeOperations: Exceeded end of emulation range");
@@ -97,7 +97,7 @@ namespace Temama.Trading.Exchanges.Emu
         public override double GetLastPrice(string baseCur, string fundCur)
         {
             SetBaseFund(baseCur, fundCur);
-            return _ticks[_currentTick].Last;
+            return _trades[_currentTick].Price;
         }
 
         protected override void CancellOrderImpl(Order order)
@@ -145,16 +145,7 @@ namespace Temama.Trading.Exchanges.Emu
             var res = new List<Trade>();
             foreach (var t in _userTrades)
             {
-                res.Add(new Trade()
-                {
-                    Id = t.Id,
-                    CreatedAt = t.CreatedAt,
-                    Funds = t.Funds,
-                    Pair = t.Pair,
-                    Price = t.Price,
-                    Side = t.Side,
-                    Volume = t.Volume
-                });
+                res.Add(t.Clone());
             }
             return res;
         }
@@ -170,7 +161,7 @@ namespace Temama.Trading.Exchanges.Emu
         {
             SetBaseFund(baseCur, fundCur);
             var book = new OrderBook();
-            var price = _ticks[_currentTick].Last;
+            var price = _trades[_currentTick].Price;
             var rand = new Random(DateTime.Now.Millisecond);
             for (int i = 0; i < 20; i++)
             {
@@ -196,20 +187,17 @@ namespace Temama.Trading.Exchanges.Emu
             return book;
         }
 
-        public List<Tick> GetRecentPrices(string baseCur, string fundCur, DateTime fromDate, int maxResultCount = 1000)
+        public List<Trade> GetRecentTrades(string baseCur, string fundCur, DateTime fromDate)
         {
             SetBaseFund(baseCur, fundCur);
-            var res = new List<Tick>();
-            for (int i = _currentTick; i > _currentTick - maxResultCount; i--)
+            var res = new List<Trade>();
+            for (int i = _currentTick; i >= 0; i--)
             {
-                var t = _ticks[i];
-                if (i <= 0 || t.Time < fromDate)
+                var t = _trades[i];
+                if (i <= 0 || t.CreatedAt < fromDate)
                     break;
-                res.Add(new Tick()
-                {
-                    Time = t.Time,
-                    Last = t.Last
-                });
+
+                res.Add(t.Clone());
             }
 
             return res;
@@ -248,8 +236,8 @@ namespace Temama.Trading.Exchanges.Emu
             };
             _userOrders.Add(res);
 
-            if ((side == "sell" && res.Price <= _ticks[_currentTick].Last) ||
-                (side == "buy" && res.Price >= _ticks[_currentTick].Last))
+            if ((side == "sell" && res.Price <= _trades[_currentTick].Price) ||
+                (side == "buy" && res.Price >= _trades[_currentTick].Price))
             {
                 CompleteUserOrder(res, _lastTime, true);
                 _userOrders.Remove(res);
@@ -274,14 +262,14 @@ namespace Temama.Trading.Exchanges.Emu
             if (_userOrders.Count == 0)
                 return;
 
-            var price = _ticks[tickNumber].Last;
+            var price = _trades[tickNumber].Price;
             var ordersToRemove = new List<Order>();
             foreach (var order in _userOrders)
             {
                 if ((order.Side == "buy" && price <= order.Price) ||
                     (order.Side == "sell" && price >= order.Price))
                 {
-                    CompleteUserOrder(order, _ticks[tickNumber].Time, false);
+                    CompleteUserOrder(order, _trades[tickNumber].CreatedAt, false);
                     ordersToRemove.Add(order);
                 }
             }
@@ -318,7 +306,6 @@ namespace Temama.Trading.Exchanges.Emu
                 Side = order.Side,
                 Price = order.Price,
                 Volume = order.Volume,
-                Funds = amount,
                 Pair = _base + _fund
             };
             _userTrades.Add(trade);
@@ -332,16 +319,19 @@ namespace Temama.Trading.Exchanges.Emu
                     continue;
 
                 var jLine = JObject.Parse(line);
-                _ticks.Add(new Tick()
+                _trades.Add(new Trade()
                 {
-                    Time = DateTime.Parse((jLine["Time"] as JValue).Value.ToString()),
-                    Last = Convert.ToDouble((jLine["Price"] as JValue).Value, CultureInfo.InvariantCulture)
+                    Id = (jLine["Id"] as JValue).Value.ToString(),
+                    Price = Convert.ToDouble((jLine["Price"] as JValue).Value, CultureInfo.InvariantCulture),
+                    Volume = Convert.ToDouble((jLine["Volume"] as JValue).Value, CultureInfo.InvariantCulture),
+                    CreatedAt = DateTime.Parse((jLine["Time"] as JValue).Value.ToString()),
+                    Side = (jLine["Side"] as JValue).Value.ToString()
                 });
             }
 
-            _ticks.Sort(Tick.DateTimeAscSorter);
-            _ticksStartDate = _ticks[0].Time;
-            _ticksEndDate = _ticks[_ticks.Count - 1].Time;
+            _trades.Sort(Trade.SortByDate);
+            _ticksStartDate = _trades[0].CreatedAt;
+            _ticksEndDate = _trades[_trades.Count - 1].CreatedAt;
         }
     }
 }
