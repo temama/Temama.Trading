@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Xml;
+using Temama.Trading.Algo.Bots;
 using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Utils;
@@ -26,6 +27,8 @@ namespace Temama.Trading.Algo
                     return new Shaper(config, logHandler);
                 case "sheriff":
                     return new Sheriff(config, logHandler);
+                case "surfer":
+                    return new Surfer(config, logHandler);
             }
 
             throw new Exception($"No Bot with name={botName} found");

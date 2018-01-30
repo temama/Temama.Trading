@@ -2,10 +2,11 @@
 using System.Globalization;
 using System.Xml;
 using Temama.Trading.Core.Algo;
+using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Utils;
 
-namespace Temama.Trading.Algo
+namespace Temama.Trading.Algo.Bots
 {
     public class Ranger : TradingBot
     {

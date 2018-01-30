@@ -12,7 +12,7 @@ using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
 using Temama.Trading.Core.Utils;
 
-namespace Temama.Trading.Algo
+namespace Temama.Trading.Algo.Bots
 {
     public class RangerPro: TradingBot
     {
@@ -114,7 +114,7 @@ namespace Temama.Trading.Algo
                 }
             }
         }
-
+        
         private void CorrectRange(List<Tick> stats, DateTime iterationTime)
         {
             _log.Info("RangerPro: Range correction...");

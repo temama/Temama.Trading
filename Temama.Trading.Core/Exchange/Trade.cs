@@ -25,9 +25,9 @@ namespace Temama.Trading.Core.Exchange
         public static int SortByDate(Trade first, Trade second)
         {
             if (first.CreatedAt < second.CreatedAt)
-                return 1;
-            else if (second.CreatedAt < first.CreatedAt)
                 return -1;
+            else if (second.CreatedAt < first.CreatedAt)
+                return 1;
             else return 0;
         }
 

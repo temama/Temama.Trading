@@ -7,7 +7,7 @@ using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Utils;
 
-namespace Temama.Trading.Algo
+namespace Temama.Trading.Algo.Bots
 {
     public class Shaper : TradingBot
     {
@@ -100,7 +100,7 @@ namespace Temama.Trading.Algo
             var shape = GetCurrentShape();
             _log.Info(shape);
         }
-
+        
         private string GetCurrentShape()
         {
             var res = "";

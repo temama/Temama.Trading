@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TemamaTradingConfig>
+  <Bot name="Surfer" displayName="example" autostart="true">
+    <Api exchange="Cex">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+      <UserID>up0000000</UserID> <!-- This is needed for CEX.IO -->
+    </Api>
+
+    <!-- Algo -->
+    <BaseCurrency>eth</BaseCurrency>
+    <FundCurrency>usd</FundCurrency>
+    <MinBaseToTrade>0.001</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>
+    <ExecuteInterval>30</ExecuteInterval>    <!-- Interval between bot iterations in seconds-->
+    <StopLossEnabled>true</StopLossEnabled>
+    <StopLossPercent>0.39</StopLossPercent>
+    <MinutesToAnalize>10</MinutesToAnalize>
+    <PriceChangePercent>0.3</PriceChangePercent>
+    <SellPercent>1</SellPercent>
+  </Bot>
+</TemamaTradingConfig>

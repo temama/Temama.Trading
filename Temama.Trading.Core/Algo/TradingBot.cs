@@ -41,6 +41,9 @@ namespace Temama.Trading.Core.Algo
         protected double _minFundToTrade;
         protected double _maxFundsToOperate = double.MaxValue;
 
+        protected bool _stopLossEnabled = false;
+        protected double _stopLossPercent = 0.0;
+
         // Iteration stats
         protected bool _iterationStatsUpdated = false;
         protected double _lastPrice = 0;
@@ -91,6 +94,9 @@ namespace Temama.Trading.Core.Algo
                 _maxFundsToOperate = double.MaxValue;
             _maxCriticalsCount = Convert.ToInt32(config.GetConfigValue("MaxCriticalsCount", true, "100"));
             _FiatBalanceCheckInterval = TimeSpan.FromMinutes(Convert.ToInt32(config.GetConfigValue("FiatCheckInterval", true, "10")));
+
+            _stopLossEnabled = Convert.ToBoolean(config.GetConfigValue("StopLossEnabled", true, "false"));
+            _stopLossPercent = Convert.ToDouble(config.GetConfigValue("StopLossPercent", true, "0"), CultureInfo.InvariantCulture) * 0.01;
 
             _pair = _base + "/" + _fund;
 
@@ -171,15 +177,46 @@ namespace Temama.Trading.Core.Algo
             return sum;
         }
 
+        public virtual double GetFundsInOrders()
+        {
+            if (!_iterationStatsUpdated)
+                UpdateIterationStats();
+
+            var sum = 0.0;
+            foreach (var order in _openOrders)
+            {
+                if (order.Side == "sell")
+                    sum += order.Volume * _lastPrice;
+                else
+                    sum += order.Volume * order.Price;
+            }
+
+            return sum;
+        }
+
         protected abstract void InitAlgo(XmlNode config);
 
         protected abstract void TradingIteration(DateTime dateTime);
-
+        
         protected virtual void DoTradingIteration(DateTime dateTime)
         {
             try
             {
                 PrintSummary();
+
+                if (_stopLossEnabled)
+                {
+                    foreach (var order in _openOrders.Where(o=>o.Side == "sell"))
+                    {
+                        if (IsStopLoss(order, _lastPrice))
+                        {
+                            _log.Warning("Cancelling order by stop loss:");
+                            _api.CancellOrder(order);
+                            NotifyOrderCancel(order);
+                            SellByMarketPrice(GetAlmolstAll(order.Volume));
+                        }
+                    }
+                }
 
                 TradingIteration(dateTime);
 
@@ -293,8 +330,8 @@ namespace Temama.Trading.Core.Algo
         protected virtual double GetLimitedBaseAmount(double expectedBaseAmount = double.MaxValue)
         {
             _iterationStatsUpdated = false;
-            var totalFiat = GetFiatBalance();
-            var allowed = _maxFundsToOperate - totalFiat;
+            var fundsInOrders = GetFundsInOrders();
+            var allowed = _maxFundsToOperate - fundsInOrders;
             if (allowed <= 0)
                 return 0;
 
@@ -311,8 +348,8 @@ namespace Temama.Trading.Core.Algo
         protected virtual double GetLimitedFundsAmount(double expectedFundsAmount = double.MaxValue)
         {
             _iterationStatsUpdated = false;
-            var totalFiat = GetFiatBalance();
-            var allowed = _maxFundsToOperate - totalFiat;
+            var fundsInOrders = GetFundsInOrders();
+            var allowed = _maxFundsToOperate - fundsInOrders;
             if (allowed <= 0)
                 return 0;
 
@@ -376,6 +413,17 @@ namespace Temama.Trading.Core.Algo
         {
             _log.Important($"{WhoAmI} Market trade done: {order}");
             NotificationManager.SendImportant(WhoAmI, $"Market trade done: {order}");
+        }
+        
+        /// <summary>
+        /// Returns "true" if order should be cancelled by stop loss
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        protected virtual bool IsStopLoss(Order order, double price)
+        {
+            _log.Warning("Stop loss is not available for " + Name());
+            return false;
         }
 
         /// <summary>

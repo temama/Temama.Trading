@@ -217,6 +217,9 @@ namespace Temama.Trading.Exchanges.Emu
 
         protected override Order PlaceOrderImpl(string baseCur, string fundCur, string side, double volume, double price)
         {
+            if (price <= 0 || volume <= 0)
+                throw new Exception($"EmuApi.PlaceOrder: Incorrect price={price} or volume={volume}");
+
             SetBaseFund(baseCur, fundCur);
             if (side == "buy")
             {
@@ -332,7 +335,7 @@ namespace Temama.Trading.Exchanges.Emu
                 _ticks.Add(new Tick()
                 {
                     Time = DateTime.Parse((jLine["Time"] as JValue).Value.ToString()),
-                    Last = Convert.ToDouble((jLine["Last"] as JValue).Value, CultureInfo.InvariantCulture)
+                    Last = Convert.ToDouble((jLine["Price"] as JValue).Value, CultureInfo.InvariantCulture)
                 });
             }
 
