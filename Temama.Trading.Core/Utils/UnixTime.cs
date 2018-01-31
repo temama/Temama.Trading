@@ -15,5 +15,10 @@ namespace Temama.Trading.Core.Utils
         {
             return unixBase.AddMilliseconds(unixTimeStamp);
         }
+
+        public static long GetUnixTime()
+        {
+            return DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        }
     }
 }

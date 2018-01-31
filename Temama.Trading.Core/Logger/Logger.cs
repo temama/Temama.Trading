@@ -5,6 +5,7 @@ namespace Temama.Trading.Core.Logger
 {
     public class Logger
     {
+        public static LogSeverity GlobalLogLevel = LogSeverity.Spam;
         public static bool WriteToFile = true;
         private object _token = new object();
         private string _fileName = @"Logs\Temama.Trading.log";
@@ -64,6 +65,9 @@ namespace Temama.Trading.Core.Logger
 
         public void LogMessage(LogSeverity severity, string message)
         {
+            if (severity < GlobalLogLevel)
+                return;
+
             if (severity < _logLevel)
                 return;
 

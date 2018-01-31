@@ -22,7 +22,7 @@ namespace Temama.Trading.Core.Algo
         {
             get
             {
-                return Open < Close;
+                return Open <= Close;
             }
         }
 
@@ -127,7 +127,7 @@ namespace Temama.Trading.Core.Algo
 
         public override string ToString()
         {
-            return string.Format("[O:{0} H:{1} L:{2} C:{3}]", Open, High, Low, Close);
+            return $"[O:{Open} H:{High} L:{Low} C:{Close} V:{Volume}]";
         }
     }
 }

@@ -105,6 +105,20 @@ namespace Temama.Trading.Core.Algo
         }
 
         /// <summary>
+        /// Marks candlestick as Completed if it's End < dateTime
+        /// </summary>
+        /// <param name="candles"></param>
+        /// <param name="dateTime"></param>
+        public static void CompleteCandles(List<Candlestick> candles, DateTime dateTime)
+        {
+            foreach (var candle in candles)
+            {
+                if (candle.End < dateTime)
+                    candle.Completed = true;
+            }
+        }
+
+        /// <summary>
         /// Group same-width candles into wider
         /// </summary>
         /// <param name="candlesticks"></param>
