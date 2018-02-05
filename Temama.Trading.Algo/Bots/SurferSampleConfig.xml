@@ -9,15 +9,18 @@
     </Api>
 
     <!-- Algo -->
-    <BaseCurrency>eth</BaseCurrency>
-    <FundCurrency>usd</FundCurrency>
+    <BaseCurrency>ETH</BaseCurrency>
+    <FundCurrency>USD</FundCurrency>
     <MinBaseToTrade>0.001</MinBaseToTrade>
     <MinFundToTrade>2.5</MinFundToTrade>
     <ExecuteInterval>30</ExecuteInterval>    <!-- Interval between bot iterations in seconds-->
+    <FiatCheckInterval>180</FiatCheckInterval>    <!-- Fiat check interval in minutes -->
+    <!--MaxFundToOperate>200</MaxFundToOperate-->
     <StopLossEnabled>true</StopLossEnabled>
     <StopLossPercent>0.39</StopLossPercent>
-    <MinutesToAnalize>10</MinutesToAnalize>
-    <PriceChangePercent>0.3</PriceChangePercent>
-    <SellPercent>1</SellPercent>
+    <StopLossDelay>45</StopLossDelay>    <!-- CandlestickWidth*3 -->
+    <CandlestickWidth>15</CandlestickWidth>    <!-- Candlestick width in minutes-->
+    <VolatilityRate>1</VolatilityRate>
+    <TakeProfit>1.15</TakeProfit>
   </Bot>
 </TemamaTradingConfig>

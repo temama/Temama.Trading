@@ -10,8 +10,8 @@ namespace Temama.Trading.Algo.Bots
 {
     public class Surfer : TradingBot
     {
-        private double _minutesToAnalize = 10.0;
-        private double _priceChangePercent = 0.0;
+        private double _candleWidth = 10.0;
+        private double _volatilityRate = 1.0;
         private double _sellPercent = 0.0;
         private double _volumeTolerance = 0.1;
 
@@ -34,9 +34,9 @@ namespace Temama.Trading.Algo.Bots
             else
                 _analitics = _api as IExchangeAnalitics;
 
-            _minutesToAnalize = Convert.ToDouble(config.GetConfigValue("MinutesToAnalize"), CultureInfo.InvariantCulture);
-            _priceChangePercent = Convert.ToDouble(config.GetConfigValue("PriceChangePercent"), CultureInfo.InvariantCulture) * 0.01;
-            _sellPercent = Convert.ToDouble(config.GetConfigValue("SellPercent"), CultureInfo.InvariantCulture) * 0.01;
+            _candleWidth = Convert.ToDouble(config.GetConfigValue("CandlestickWidth"), CultureInfo.InvariantCulture);
+            _volatilityRate = Convert.ToDouble(config.GetConfigValue("VolatilityRate"), CultureInfo.InvariantCulture) * 0.01;
+            _sellPercent = Convert.ToDouble(config.GetConfigValue("TakeProfit"), CultureInfo.InvariantCulture) * 0.01;
         }
 
         protected override void TradingIteration(DateTime dateTime)
@@ -47,8 +47,8 @@ namespace Temama.Trading.Algo.Bots
             var funds = GetAlmolstAll(GetLimitedFundsAmount());
             if (funds > _minFundToTrade)
             {
-                var coef = CalculatePriceChange(dateTime);
-                if (coef >= _priceChangePercent)
+                var rate = GetPriceRiseExpectation(dateTime);
+                if (rate > 0)
                 {
                     if (BuyByMarketPrice(funds))
                     {
@@ -94,44 +94,81 @@ namespace Temama.Trading.Algo.Bots
         //    return coef;
         //}
 
-        private double CalculatePriceChange(DateTime iterationTime)
+        //private double CalculatePriceChange(DateTime iterationTime)
+        //{
+        //    var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _minutesToAnalize));
+        //    var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_minutesToAnalize / 4));
+
+        //    _log.Spam($"Candlesticks for last {_minutesToAnalize} minutes:");
+        //    foreach (var candle in candles)
+        //    {
+        //        _log.Spam(candle.ToString());
+        //    }
+
+        //    if (candles.Count < 3)
+        //        return 0;
+
+        //    var c1 = candles[candles.Count - 3];
+        //    var c2 = candles[candles.Count - 2];
+        //    var c3 = candles[candles.Count - 1];
+
+        //    if (!(c1.Green && c2.Green && c3.Green))
+        //        return 0;
+
+        //    if ((c1.Volume == 0 && c2.Volume == 0) ||
+        //        (c2.Volume == 0 && c3.Volume == 0))
+        //        return 0;
+
+        //    if (c2.Volume > c1.Volume - _volumeTolerance &&
+        //        c3.Volume > c2.Volume - _volumeTolerance)
+        //    {
+        //        return c3.Close / c1.Open - 1;
+        //    }
+        //    else
+        //        return 0;
+        //}
+
+        private double GetPriceRiseExpectation(DateTime iterationTime)
         {
-            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _minutesToAnalize));
-            var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_minutesToAnalize / 4));
+            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _candleWidth * 2));
+            var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_candleWidth));
+            CandlestickHelper.CompleteCandles(candles, iterationTime);
             
-            _log.Spam($"Candlesticks for last {_minutesToAnalize} minutes:");
+            if (candles.Count < 2)
+                return 0;
+
+            if (iterationTime - TimeSpan.FromSeconds(_interval) > candles[candles.Count - 1].Start)
+            {
+                // Skipping iteration. We need to wait to get data on new candlestick beginning
+                return 0;
+            }
+
+            _log.Spam($"Candlesticks for last {_candleWidth} minutes:");
             foreach (var candle in candles)
             {
                 _log.Spam(candle.ToString());
             }
+                        
 
-            if (candles.Count < 3)
+            var lastCompleted = candles[candles.Count - 1].Completed ? candles[candles.Count - 1] : candles[candles.Count - 2];
+
+            if (lastCompleted.Green || lastCompleted.Volume == 0 ||
+                Math.Abs(lastCompleted.Body) < 0.02 * _volatilityRate )
                 return 0;
 
-            var c1 = candles[candles.Count - 3];
-            var c2 = candles[candles.Count - 2];
-            var c3 = candles[candles.Count - 1];
-
-            if (!(c1.Green && c2.Green && c3.Green))
-                return 0;
-
-            if ((c1.Volume == 0 && c2.Volume == 0) ||
-                (c2.Volume == 0 && c3.Volume == 0))
-                return 0;
-
-            if (c2.Volume > c1.Volume - _volumeTolerance &&
-                c3.Volume > c2.Volume - _volumeTolerance)
+            if (Math.Abs(lastCompleted.LowerShadow) < 0.0001)
             {
-                return c3.Close / c1.Open - 1;
+                return 1;
             }
             else
                 return 0;
         }
 
+
         protected override bool IsStopLoss(Order order, double price)
         {
-            var cutOffTime = (_emulation ? _emulationDateTime : DateTime.Now) - TimeSpan.FromMinutes(_minutesToAnalize);
-            if (order.CreatedAt > cutOffTime)
+            var cutofftime = (_emulation ? _emulationDateTime : DateTime.UtcNow) - TimeSpan.FromMinutes(_stopLossDelay);
+            if (order.CreatedAt > cutofftime)
                 return false;
 
             var placedPrice = order.Price / (1 + _sellPercent);

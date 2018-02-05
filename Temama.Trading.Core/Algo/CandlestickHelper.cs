@@ -67,7 +67,7 @@ namespace Temama.Trading.Core.Algo
             return res;
         }
 
-        public static List<Candlestick> TradesToCandlesNoTime(List<Trade> trades, TimeSpan candleWidth)
+        public static List<Candlestick> TradesToCandlesNoTimeBinding(List<Trade> trades, TimeSpan candleWidth)
         {
             var res = new List<Candlestick>();
             if (trades == null || trades.Count == 0)
@@ -113,7 +113,7 @@ namespace Temama.Trading.Core.Algo
         {
             foreach (var candle in candles)
             {
-                if (candle.End < dateTime)
+                if (candle.End <= dateTime)
                     candle.Completed = true;
             }
         }

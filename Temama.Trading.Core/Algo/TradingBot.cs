@@ -43,6 +43,7 @@ namespace Temama.Trading.Core.Algo
 
         protected bool _stopLossEnabled = false;
         protected double _stopLossPercent = 0.0;
+        protected double _stopLossDelay = 0.0;
 
         // Iteration stats
         protected bool _iterationStatsUpdated = false;
@@ -97,6 +98,7 @@ namespace Temama.Trading.Core.Algo
 
             _stopLossEnabled = Convert.ToBoolean(config.GetConfigValue("StopLossEnabled", true, "false"));
             _stopLossPercent = Convert.ToDouble(config.GetConfigValue("StopLossPercent", true, "0"), CultureInfo.InvariantCulture) * 0.01;
+            _stopLossDelay = Convert.ToDouble(config.GetConfigValue("StopLossDelay", true, "0"), CultureInfo.InvariantCulture);
 
             _pair = _base + "/" + _fund;
 
@@ -438,6 +440,11 @@ namespace Temama.Trading.Core.Algo
                 NotificationManager.SendError(WhoAmI, "Exceeded max criticals. Stopping...");
                 Stop();
             }
+        }
+
+        protected DateTime GetTime()
+        {
+            return _emulation ? _emulationDateTime : DateTime.UtcNow;
         }
 
         private TradingBot()

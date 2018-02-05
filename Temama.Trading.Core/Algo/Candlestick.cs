@@ -34,7 +34,7 @@ namespace Temama.Trading.Core.Algo
             get
             {
                 var top = Math.Max(Open, Close);
-                return (High - top) / ((High + top) / 2) * 100;
+                return (High - top) / ((High + top) / 2); //* 100;
             }
         }
 
@@ -43,7 +43,7 @@ namespace Temama.Trading.Core.Algo
             get
             {
                 var bottom = Math.Min(Open, Close);
-                return (Low - bottom) / ((Low + bottom) / 2) * 100;
+                return (Low - bottom) / ((Low + bottom) / 2); // * 100;
             }
         }
         
@@ -55,7 +55,7 @@ namespace Temama.Trading.Core.Algo
         {
             get
             {
-                return (Close - Open) / ((Open + Close) / 2) * 100;
+                return (Close - Open) / ((Open + Close) / 2); // * 100;
             }
         }
 
