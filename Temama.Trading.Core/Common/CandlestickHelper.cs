@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Temama.Trading.Core.Exchange;
 
-namespace Temama.Trading.Core.Algo
+namespace Temama.Trading.Core.Common
 {
     public class CandlestickHelper
     {

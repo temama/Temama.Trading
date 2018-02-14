@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
 using Temama.Trading.Core.Algo;
+using Temama.Trading.Core.Common;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Utils;
@@ -10,10 +12,12 @@ namespace Temama.Trading.Algo.Bots
 {
     public class Surfer : TradingBot
     {
+        private List<Signal> _signals = new List<Signal>();
         private double _candleWidth = 10.0;
-        private double _volatilityRate = 1.0;
-        private double _sellPercent = 0.0;
-        private double _volumeTolerance = 0.1;
+        private double _takeProfit = 1.0;
+        private double _zeroTolerance = 0.0001;
+        private int _minSignalCandlesCount = int.MaxValue;
+        private int _maxSignalCandlesCount = 0;
 
         private IExchangeAnalitics _analitics;
 
@@ -35,8 +39,27 @@ namespace Temama.Trading.Algo.Bots
                 _analitics = _api as IExchangeAnalitics;
 
             _candleWidth = Convert.ToDouble(config.GetConfigValue("CandlestickWidth"), CultureInfo.InvariantCulture);
-            _volatilityRate = Convert.ToDouble(config.GetConfigValue("VolatilityRate"), CultureInfo.InvariantCulture) * 0.01;
-            _sellPercent = Convert.ToDouble(config.GetConfigValue("TakeProfit"), CultureInfo.InvariantCulture) * 0.01;
+            _zeroTolerance = Convert.ToDouble(config.GetConfigValue("ZeroTolerance", true, "0.0001"), CultureInfo.InvariantCulture) * 0.01;
+            _takeProfit = Convert.ToDouble(config.GetConfigValue("TakeProfit"), CultureInfo.InvariantCulture) * 0.01;
+
+            _signals = new List<Signal>();
+            var signals = config.SelectSingleNode("Signals");
+            foreach (XmlNode signalNode in signals)
+            {
+                var signal = Signal.Parse(signalNode);
+                if (signal.CandlesCount > _maxSignalCandlesCount)
+                    _maxSignalCandlesCount = signal.CandlesCount;
+                if (signal.CandlesCount < _minSignalCandlesCount)
+                    _minSignalCandlesCount = signal.CandlesCount;
+                signal.ZeroTolerance = _zeroTolerance;
+
+                _signals.Add(signal);
+            }
+
+            if (_signals.Count == 0)
+                throw new Exception("At least one signal should be provided at config");
+
+            _analitics.SetHistoricalTradesPersistInterval(_base, _fund, TimeSpan.FromMinutes(_candleWidth * (_maxSignalCandlesCount + 1)));
         }
 
         protected override void TradingIteration(DateTime dateTime)
@@ -47,17 +70,22 @@ namespace Temama.Trading.Algo.Bots
             var funds = GetAlmolstAll(GetLimitedFundsAmount());
             if (funds > _minFundToTrade)
             {
-                var rate = GetPriceRiseExpectation(dateTime);
-                if (rate > 0)
+                var signal = CheckSignals(dateTime);
+                if (signal != null)
                 {
                     if (BuyByMarketPrice(funds))
                     {
                         var amount = GetAlmolstAll(GetLimitedBaseAmount());
                         if (amount > _minBaseToTrade)
                         {
-                            var order = _api.PlaceOrder(_base, _fund, "sell", amount, _lastPrice + _lastPrice * _sellPercent);
+                            var price = signal.LastPriceExpectation > 0 ? 
+                                signal.LastPriceExpectation : _lastPrice + _lastPrice * _takeProfit;
+                            
+                            var order = _api.PlaceOrder(_base, _fund, "sell", amount, price);
                             NotifyOrderPlaced(order);
                         }
+                        else
+                            _log.Warning($"Not enough {_base} to place sell order");
                     }
                 }
             }
@@ -128,40 +156,39 @@ namespace Temama.Trading.Algo.Bots
         //        return 0;
         //}
 
-        private double GetPriceRiseExpectation(DateTime iterationTime)
+        private Signal CheckSignals(DateTime iterationTime)
         {
-            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _candleWidth * 2));
+            if (!_analitics.HasHistoricalDataStartingFrom(_base, _fund, 
+                iterationTime.AddMinutes(-1*_minSignalCandlesCount * _candleWidth), true))
+            {
+                _log.Info("Not enough historical data to perform iteration");
+            }
+
+            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _candleWidth * _maxSignalCandlesCount));
             var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_candleWidth));
             CandlestickHelper.CompleteCandles(candles, iterationTime);
             
-            if (candles.Count < 2)
-                return 0;
-
-            if (iterationTime - TimeSpan.FromSeconds(_interval) > candles[candles.Count - 1].Start)
+            if (candles.Count == 0 ||
+                iterationTime - TimeSpan.FromSeconds(_interval) > candles[candles.Count - 1].Start)
             {
-                // Skipping iteration. We need to wait to get data on new candlestick beginning
-                return 0;
+                // CheckSignals should be done only once per candle interval - at the very begining
+                return null;
             }
 
-            _log.Spam($"Candlesticks for last {_candleWidth} minutes:");
-            foreach (var candle in candles)
+            // Removing last (just opened) candle
+            candles.RemoveAt(candles.Count - 1);
+            if (candles.Count == 0)
             {
-                _log.Spam(candle.ToString());
+                return null;
             }
-                        
 
-            var lastCompleted = candles[candles.Count - 1].Completed ? candles[candles.Count - 1] : candles[candles.Count - 2];
-
-            if (lastCompleted.Green || lastCompleted.Volume == 0 ||
-                Math.Abs(lastCompleted.Body) < 0.02 * _volatilityRate )
-                return 0;
-
-            if (Math.Abs(lastCompleted.LowerShadow) < 0.0001)
+            foreach (var signal in _signals)
             {
-                return 1;
+                if (signal.Verify(candles))
+                    return signal;
             }
-            else
-                return 0;
+
+            return null;
         }
 
 
@@ -171,7 +198,7 @@ namespace Temama.Trading.Algo.Bots
             if (order.CreatedAt > cutofftime)
                 return false;
 
-            var placedPrice = order.Price / (1 + _sellPercent);
+            var placedPrice = order.Price / (1 + _takeProfit);
             if (price <= placedPrice - placedPrice * _stopLossPercent)
                 return true;
             return false;

@@ -228,5 +228,15 @@ namespace Temama.Trading.Exchanges.Exmo
             }
             return (sbinary).ToLowerInvariant();
         }
+
+        public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -200,5 +200,15 @@ namespace Temama.Trading.Exchanges.Kuna
             return string.Join("&", dict.Select(kvp =>
                  string.Format("{0}={1}", kvp.Key, escape ? HttpUtility.UrlEncode(kvp.Value) : kvp.Value)));
         }
+
+        public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

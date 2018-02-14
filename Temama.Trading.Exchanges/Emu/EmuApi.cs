@@ -202,6 +202,18 @@ namespace Temama.Trading.Exchanges.Emu
 
             return res;
         }
+        
+        public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
+        {
+        }
+
+        public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
+        {
+            if (dateTime < _ticksStartDate)
+                return false;
+
+            return true;
+        }
 
         protected override Order PlaceOrderImpl(string baseCur, string fundCur, string side, double volume, double price)
         {

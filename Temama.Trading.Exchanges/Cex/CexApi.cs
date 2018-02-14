@@ -182,5 +182,15 @@ namespace Temama.Trading.Exchanges.Cex
                 return BitConverter.ToString(hashmessage).Replace("-", string.Empty).ToUpper();
             }
         }
+
+        public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

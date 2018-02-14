@@ -215,7 +215,7 @@ namespace Temama.Trading.Core.Algo
                             _log.Warning("Cancelling order by stop loss:");
                             _api.CancellOrder(order);
                             NotifyOrderCancel(order);
-                            SellByMarketPrice(GetAlmolstAll(order.Volume));
+                            SellByMarketPrice(order.Volume);
                         }
                     }
                 }

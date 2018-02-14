@@ -11,20 +11,16 @@
     <!-- Algo -->
     <BaseCurrency>eth</BaseCurrency>
     <FundCurrency>usd</FundCurrency>
-    <MinBaseToTrade>0.001</MinBaseToTrade>
-    <MinFundToTrade>2.5</MinFundToTrade>
+    <MinBaseToTrade>0.05</MinBaseToTrade>
+    <MinFundToTrade>70</MinFundToTrade>
     <ExecuteInterval>30</ExecuteInterval>  <!-- Interval between bot iterations in seconds-->
-    <HoursToAnalyze>3</HoursToAnalyze>
-    <RangeCorrectionInterval>AtTrade</RangeCorrectionInterval>  <!-- "AtTrade" or Interval between range corrections in seconds-->
-    <SellPercent>0.5</SellPercent>
-    <BuyPercent>0.5</BuyPercent>
-
-    <AllowSellCancel>True</AllowSellCancel> <!-- Allow cancel sell order if price was "far away" for long time -->
-    <SellCancelHours>72</SellCancelHours>
-    <SellCancelDistancePercent>10</SellCancelDistancePercent>
-
-    <AllowBuyCancel>True</AllowBuyCancel> <!-- Allow cancel buy order if price was "far away" for long time -->
-    <BuyCancelHours>24</BuyCancelHours>
-    <BuyCancelDistancePercent>5</BuyCancelDistancePercent>
+    <MinutesToAnalyze>60</MinutesToAnalyze>
+    <VolatilityRate>2.0</VolatilityRate>  <!-- Price range to activate bot -->
+    <InRangePricePercent>95</InRangePricePercent> <!-- Percent of trades to be done inside range -->
+    <TakeProfit>1.15</TakeProfit>
+    <PastPossibleTrades>1</PastPossibleTrades>
+    <!--MaxFundToOperate>200</MaxFundToOperate-->
+    <StopLossEnabled>true</StopLossEnabled>
+    <StopLossPercent>1.39</StopLossPercent>    
   </Bot>
 </TemamaTradingConfig>
