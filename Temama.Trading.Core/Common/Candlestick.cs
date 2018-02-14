@@ -29,21 +29,28 @@ namespace Temama.Trading.Core.Common
 
         public TimeSpan Width { get { return End - Start; } }
 
+
+        /// <summary>
+        /// Percentage of upper shadow price change. Always >= 0
+        /// </summary>
         public double UpperShadow
         {
             get
             {
                 var top = Math.Max(Open, Close);
-                return (High - top) / ((High + top) / 2); //* 100;
+                return (High - top) / (top); //* 100;
             }
         }
 
+        /// <summary>
+        /// Percentage of lower shadow price change. Always less or equal 0
+        /// </summary>
         public double LowerShadow
         {
             get
             {
                 var bottom = Math.Min(Open, Close);
-                return (Low - bottom) / ((Low + bottom) / 2); // * 100;
+                return (Low - bottom) / (bottom); // * 100;
             }
         }
         
@@ -55,7 +62,7 @@ namespace Temama.Trading.Core.Common
         {
             get
             {
-                return (Close - Open) / ((Open + Close) / 2); // * 100;
+                return (Close - Open) / (Open); // * 100;
             }
         }
 

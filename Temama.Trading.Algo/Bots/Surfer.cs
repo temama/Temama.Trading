@@ -43,7 +43,7 @@ namespace Temama.Trading.Algo.Bots
             _takeProfit = Convert.ToDouble(config.GetConfigValue("TakeProfit"), CultureInfo.InvariantCulture) * 0.01;
 
             _signals = new List<Signal>();
-            var signals = config.SelectSingleNode("Signals");
+            var signals = config.SelectNodes("Signals/Signal");
             foreach (XmlNode signalNode in signals)
             {
                 var signal = Signal.Parse(signalNode);

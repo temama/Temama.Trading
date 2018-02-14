@@ -60,7 +60,7 @@ namespace Temama.Trading.Core.Common
                 {
                     var expr = s.Substring(s.IndexOf('('));
                     s = s.Replace(expr, string.Empty);
-                    candle.VolumeExpr = CompleteExpr(expr.Substring(1, expr.Length - 1).Trim(), "v", candlePos);
+                    candle.VolumeExpr = CompleteExpr(expr.Substring(1, expr.Length - 2).Trim(), "v", candlePos);
                 }
 
                 // Parse candle color
