@@ -78,6 +78,7 @@ namespace Temama.Trading.Algo.Bots
                         var amount = GetAlmolstAll(GetLimitedBaseAmount());
                         if (amount > _minBaseToTrade)
                         {
+                            _log.Info($"{signal.SignalName} pattern found");
                             var price = signal.LastPriceExpectation > 0 ? 
                                 signal.LastPriceExpectation : _lastPrice + _lastPrice * _takeProfit;
                             
@@ -158,10 +159,11 @@ namespace Temama.Trading.Algo.Bots
 
         private Signal CheckSignals(DateTime iterationTime)
         {
-            if (!_analitics.HasHistoricalDataStartingFrom(_base, _fund, 
-                iterationTime.AddMinutes(-1*_minSignalCandlesCount * _candleWidth), true))
+            if (!_analitics.HasHistoricalDataStartingFrom(_base, _fund,
+                iterationTime.AddMinutes(-1 * _minSignalCandlesCount * _candleWidth), true))
             {
                 _log.Info("Not enough historical data to perform iteration");
+                return null;
             }
 
             var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _candleWidth * _maxSignalCandlesCount));

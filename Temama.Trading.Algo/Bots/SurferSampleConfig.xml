@@ -18,9 +18,12 @@
     <!--MaxFundToOperate>200</MaxFundToOperate-->
     <StopLossEnabled>true</StopLossEnabled>
     <StopLossPercent>0.39</StopLossPercent>
-    <StopLossDelay>45</StopLossDelay>    <!-- CandlestickWidth*3 -->
+    <StopLossDelay>15</StopLossDelay>    <!-- 1 x CandlestickWidth -->
     <CandlestickWidth>15</CandlestickWidth>    <!-- Candlestick width in minutes-->
-    <VolatilityRate>1</VolatilityRate>
+    <ZeroTolerance>0.0001</ZeroTolerance>
     <TakeProfit>1.15</TakeProfit>
+    <Signals>
+      <Signal name="hammer">Green[[~0.0|&gt;[AZ]|&gt;[c.b]*2]]</Signal>
+    </Signals>
   </Bot>
 </TemamaTradingConfig>
