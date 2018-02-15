@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -22,6 +23,9 @@ namespace Temama.Trading.Exchanges.Cex
         private string _userId;
         private int _OrderBookDepth = 20;
         private int _tradesFetchCount = 20;
+
+        private Dictionary<string, List<Trade>> _historical = new Dictionary<string, List<Trade>>();
+        private Dictionary<string, TimeSpan> _historicalPersistIntervals = new Dictionary<string, TimeSpan>();
 
         public override string Name()
         {
@@ -146,7 +150,42 @@ namespace Temama.Trading.Exchanges.Cex
                     trades.Add(CexTrade.FromJson(jTrade));
                 }
             }
+            UpdateHistorical(baseCur, fundCur, trades);
             return trades;
+        }
+
+        public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
+        {
+            _historicalPersistIntervals[$"{baseCur}{fundCur}"] = duration;
+        }
+
+        public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
+        {
+            var trades = GetRecentTrades(baseCur, fundCur, dateTime);
+            throw new NotImplementedException();
+        }
+
+        private void UpdateHistorical(string baseCur, string fundCur, List<Trade> trades)
+        {
+            var lifetime = _historicalPersistIntervals[$"{baseCur}{fundCur}"];
+            var historical = _historical[$"{baseCur}{fundCur}"];
+            var toRemove = new List<Trade>();
+            foreach (var t in historical)
+            {
+                if (t.CreatedAt < DateTime.UtcNow - lifetime)
+                    toRemove.Add(t);
+            }
+
+            foreach (var t in toRemove)
+            {
+                historical.Remove(t);
+            }
+
+            foreach (var t in trades)
+            {
+                if (!historical.Any(tt => tt.Id == t.Id))
+                    historical.Add(t);
+            }
         }
 
         private string UserQuery(string path, Dictionary<string, string> args)
@@ -181,16 +220,6 @@ namespace Temama.Trading.Exchanges.Cex
                 byte[] hashmessage = hmac.ComputeHash(bytes);
                 return BitConverter.ToString(hashmessage).Replace("-", string.Empty).ToUpper();
             }
-        }
-
-        public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
-        {
-            throw new NotImplementedException();
         }
     }
 }

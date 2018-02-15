@@ -73,12 +73,12 @@ namespace Temama.Trading.Algo.Bots
                 var signal = CheckSignals(dateTime);
                 if (signal != null)
                 {
+                    _log.Important($"{signal.SignalName} pattern found at {dateTime}");
                     if (BuyByMarketPrice(funds))
                     {
                         var amount = GetAlmolstAll(GetLimitedBaseAmount());
                         if (amount > _minBaseToTrade)
                         {
-                            _log.Info($"{signal.SignalName} pattern found");
                             var price = signal.LastPriceExpectation > 0 ? 
                                 signal.LastPriceExpectation : _lastPrice + _lastPrice * _takeProfit;
                             
