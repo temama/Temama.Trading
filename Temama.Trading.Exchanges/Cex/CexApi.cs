@@ -17,12 +17,14 @@ namespace Temama.Trading.Exchanges.Cex
 {
     public class CexApi : ExchangeApi, IExchangeAnalitics
     {
+        private object _locker = new object();
         private string _baseUri = "https://cex.io/api/";
         private string _publicKey;
         private string _secretKey;
         private string _userId;
         private int _OrderBookDepth = 20;
         private int _tradesFetchCount = 20;
+        private int _tradeHistoryResponseCount = 1000;
 
         private Dictionary<string, List<Trade>> _historical = new Dictionary<string, List<Trade>>();
         private Dictionary<string, TimeSpan> _historicalPersistIntervals = new Dictionary<string, TimeSpan>();
@@ -139,30 +141,40 @@ namespace Temama.Trading.Exchanges.Cex
         {
             var uri = _baseUri + "trade_history/" + baseCur.ToUpper() + "/" + fundCur.ToUpper();
             var response = WebApi.Query(uri);
-
-            var trades = new List<Trade>();
             var json = JArray.Parse(response);
-            foreach (JObject jTrade in json)
-            {
-                var time = UnixTime.FromUnixTime(Convert.ToInt64(jTrade["date"].ToString()));
-                if (time >= fromDate)
-                {
-                    trades.Add(CexTrade.FromJson(jTrade));
-                }
-            }
+            var trades = ParseTradesFromJson(json);
+            trades.Sort(Trade.SortByDate);
             UpdateHistorical(baseCur, fundCur, trades);
-            return trades;
+
+            if (_historical[$"{baseCur}{fundCur}"].First().CreatedAt < fromDate)
+                return _historical[$"{baseCur}{fundCur}"].Where(t => t.CreatedAt >= fromDate).ToList();
+
+            while (trades.First().CreatedAt > fromDate)
+            {
+                uri = _baseUri + "trade_history/" + baseCur.ToUpper() + "/" + fundCur.ToUpper() +
+                    "/?since=" + (Convert.ToInt64(trades.First().Id) - _tradeHistoryResponseCount).ToString();
+                response = WebApi.Query(uri);
+                json = JArray.Parse(response);
+                trades.AddRange(ParseTradesFromJson(json));
+                trades.Sort(Trade.SortByDate);
+            }
+            
+            UpdateHistorical(baseCur, fundCur, trades);
+            return trades.Where(t => t.CreatedAt >= fromDate).ToList();
         }
 
         public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
         {
-            _historicalPersistIntervals[$"{baseCur}{fundCur}"] = duration;
+            // Actually will save a bit more than "duration"
+            _historicalPersistIntervals[$"{baseCur}{fundCur}"] = duration + TimeSpan.FromSeconds(duration.TotalSeconds / 2);
         }
 
         public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
         {
-            var trades = GetRecentTrades(baseCur, fundCur, dateTime);
-            throw new NotImplementedException();
+            if (fetchLatest)
+                GetRecentTrades(baseCur, fundCur, dateTime);
+
+            return true;
         }
 
         private void UpdateHistorical(string baseCur, string fundCur, List<Trade> trades)
@@ -170,22 +182,38 @@ namespace Temama.Trading.Exchanges.Cex
             var lifetime = _historicalPersistIntervals[$"{baseCur}{fundCur}"];
             var historical = _historical[$"{baseCur}{fundCur}"];
             var toRemove = new List<Trade>();
-            foreach (var t in historical)
-            {
-                if (t.CreatedAt < DateTime.UtcNow - lifetime)
-                    toRemove.Add(t);
-            }
 
-            foreach (var t in toRemove)
+            lock (_locker)
             {
-                historical.Remove(t);
-            }
+                foreach (var t in historical)
+                {
+                    if (t.CreatedAt < DateTime.UtcNow - lifetime)
+                        toRemove.Add(t);
+                }
 
-            foreach (var t in trades)
-            {
-                if (!historical.Any(tt => tt.Id == t.Id))
-                    historical.Add(t);
+                foreach (var t in toRemove)
+                {
+                    historical.Remove(t);
+                }
+
+                foreach (var t in trades)
+                {
+                    if (!historical.Any(tt => tt.Id == t.Id))
+                        historical.Add(t);
+                }
+
+                historical.Sort(Trade.SortByDate);
             }
+        }
+
+        private List<Trade> ParseTradesFromJson(JArray json)
+        {
+            var trades = new List<Trade>();
+            foreach (JObject jTrade in json)
+            {
+                trades.Add(CexTrade.FromJson(jTrade));
+            }
+            return trades;
         }
 
         private string UserQuery(string path, Dictionary<string, string> args)
