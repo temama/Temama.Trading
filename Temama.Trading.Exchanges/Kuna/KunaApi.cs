@@ -43,7 +43,7 @@ namespace Temama.Trading.Exchanges.Kuna
 
         public override double GetLastPrice(string baseCur, string fundCur)
         {
-            var pair = baseCur + fundCur;
+            var pair = baseCur.ToLower() + fundCur.ToLower();
             var uri = _baseUri + "tickers/" + pair;
             _log.Spam("Request: " + uri);
             var tickerResponse = WebApi.Query(uri);
@@ -55,7 +55,7 @@ namespace Temama.Trading.Exchanges.Kuna
         
         public override OrderBook GetOrderBook(string baseCur, string fundCur)
         {
-            var pair = baseCur + fundCur;
+            var pair = baseCur.ToLower() + fundCur.ToLower();
             var uri = _baseUri + "order_book?market=" + pair;
             _log.Spam("Request: " + uri);
             var response = WebApi.Query(uri);
@@ -68,12 +68,12 @@ namespace Temama.Trading.Exchanges.Kuna
             var response = UserQuery("members/me", "GET", new Dictionary<string, string>());
             _log.Spam("Response: " + response);
             var json = JObject.Parse(response);
-            return KunaFunds.FromUserInfo(json, new List<string>() { baseCur, fundCur });
+            return KunaFunds.FromUserInfo(json, new List<string>() { baseCur.ToLower(), fundCur.ToLower() });
         }
 
         protected override Order PlaceOrderImpl(string baseCur, string fundCur, string side, double volume, double price)
         {
-            var pair = baseCur + fundCur;
+            var pair = baseCur.ToLower() + fundCur.ToLower();
             _log.Spam($"KUNA: Placing order: {side}:{pair}:{volume}:{price}");
             if (volume == 0 || price == 0)
                 throw new Exception($"PlaceOrder: Volume or Price can't be zero. Vol={volume}; Price={price}");
@@ -101,7 +101,7 @@ namespace Temama.Trading.Exchanges.Kuna
 
         protected override List<Order> GetMyOrdersImpl(string baseCur, string fundCur)
         {
-            var pair = baseCur + fundCur;
+            var pair = baseCur.ToLower() + fundCur.ToLower();
             var orders = new List<Order>();
             var response = UserQuery("orders", "GET", new Dictionary<string, string>() { { "market", pair } });
             _log.Spam("Response: " + response);
@@ -116,7 +116,7 @@ namespace Temama.Trading.Exchanges.Kuna
 
         protected override List<Trade> GetMyTradesImpl(string baseCur, string fundCur)
         {
-            var pair = baseCur + fundCur;
+            var pair = baseCur.ToLower() + fundCur.ToLower();
             var trades = new List<Trade>();
             var response = UserQuery("trades/my", "GET", new Dictionary<string, string>() { { "market", pair } });
             _log.Spam("Response: " + response);
@@ -207,6 +207,11 @@ namespace Temama.Trading.Exchanges.Kuna
         }
 
         public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Withdraw(string currency, string wallet)
         {
             throw new NotImplementedException();
         }

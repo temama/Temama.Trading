@@ -29,6 +29,8 @@ namespace Temama.Trading.Algo
                     return new Sheriff(config, logHandler);
                 case "surfer":
                     return new Surfer(config, logHandler);
+                case "juggler":
+                    return new Juggler(config, logHandler);
             }
 
             throw new Exception($"No Bot with name={botName} found");

@@ -64,6 +64,8 @@ namespace Temama.Trading.Core.Exchange
             return GetMyTradesImpl(baseCur, fundCur);
         }
 
+        public abstract void Withdraw(string currency, string wallet);
+
         public virtual double CalculateBuyVolume(double price, double fund)
         {
             return Math.Round(Math.Floor(fund) / price, 6);

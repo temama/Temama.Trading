@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TemamaTradingConfig>
+  <Bot name="Juggler" displayName="KUNA-EXMO-via-BTC-ETH" autostart="true">
+    <Api exchange="Kuna" name="kuna">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+
+    <Api exchange="Exmo" name="exmo">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+
+    <!-- Algo -->
+    <MinBaseToTrade>100000</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>
+    <!-- Dummy -->
+    <ExecuteInterval>30</ExecuteInterval>
+    <MonitorMode>True</MonitorMode>
+    <ProfitToPlay>5</ProfitToPlay>
+    <OperatingAmount>100000</OperatingAmount>
+    <VeryBase>UAH</VeryBase>
+
+    <Steps>
+      <Step order="1" api="kuna" type="buy" base="BTC" fund="UAH" fee="0.25%"/>
+      <Step order="2" api="kuna" type="trans" base="BTC" fee="0.001" wallet="EXMO_WALLER"/>
+      <Step order="3" api="exmo" type="sell" base="BTC" fund="UAH" fee="0.2%"/>
+      <Step order="4" api="exmo" type="buy" base="ETH" fund="UAH" fee="0.2%"/>
+      <Step order="5" api="exmo" type="trans" base="ETH" fee="0.01" wallet="KUNA_WALLER"/>
+      <Step order="6" api="kuna" type="sell" base="ETH" fund="UAH" fee="0.25%"/>
+    </Steps>
+  </Bot>
+
+  <Bot name="Juggler" displayName="KUNA-EXMO-via-ETH-BTC" autostart="true">
+    <Api exchange="Kuna" name="kuna">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+
+    <Api exchange="Exmo" name="exmo">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+
+    <!-- Algo -->
+    <MinBaseToTrade>100000</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>    <!-- Dummy -->
+    <ExecuteInterval>30</ExecuteInterval>
+    <MonitorMode>True</MonitorMode>
+    <ProfitToPlay>5</ProfitToPlay>
+    <OperatingAmount>100000</OperatingAmount>
+    <VeryBase>UAH</VeryBase>
+
+    <Steps>
+      <Step order="1" api="kuna" type="buy" base="ETH" fund="UAH" fee="0.25%"/>
+      <Step order="2" api="kuna" type="trans" base="ETH" fee="0.005" wallet="EXMO_WALLER"/>
+      <Step order="3" api="exmo" type="sell" base="ETH" fund="UAH" fee="0.2%"/>
+      <Step order="4" api="exmo" type="buy" base="BTC" fund="UAH" fee="0.2%"/>
+      <Step order="5" api="exmo" type="trans" base="BTC" fee="0.001" wallet="KUNA_WALLER"/>
+      <Step order="6" api="kuna" type="sell" base="BTC" fund="UAH" fee="0.25%"/>
+    </Steps>
+  </Bot>
+
+  <Bot name="Juggler" displayName="KUNA-EXMO-via-BCH-XRP" autostart="true">
+    <Api exchange="Kuna" name="kuna">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+
+    <Api exchange="Exmo" name="exmo">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+
+    <!-- Algo -->
+    <MinBaseToTrade>100000</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>    <!-- Dummy -->
+    <ExecuteInterval>30</ExecuteInterval>
+    <MonitorMode>True</MonitorMode>
+    <ProfitToPlay>5</ProfitToPlay>
+    <OperatingAmount>100000</OperatingAmount>
+    <VeryBase>UAH</VeryBase>
+
+    <Steps>
+      <Step order="1" api="kuna" type="buy" base="BCH" fund="UAH" fee="0.25%"/>
+      <Step order="2" api="kuna" type="trans" base="BCH" fee="0.001" wallet="EXMO_WALLER"/>
+      <Step order="3" api="exmo" type="sell" base="BCH" fund="USD" fee="0.2%"/>
+      <Step order="4" api="exmo" type="buy" base="XRP" fund="USD" fee="0.2%"/>
+      <Step order="5" api="exmo" type="trans" base="XRP" fee="0.02" wallet="KUNA_WALLER"/>
+      <Step order="6" api="kuna" type="sell" base="XRP" fund="UAH" fee="0.25%"/>
+    </Steps>
+  </Bot>
+
+  <Bot name="Juggler" displayName="KUNA-INTERNAL-via-BTC-ETH" autostart="true">
+    <Api exchange="Kuna" name="kuna">
+      <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+    </Api>
+
+    <!-- Algo -->
+    <MinBaseToTrade>500</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>    <!-- Dummy -->
+    <ExecuteInterval>30</ExecuteInterval>
+    <MonitorMode>True</MonitorMode>
+    <ProfitToPlay>0.1</ProfitToPlay>
+    <OperatingAmount>500</OperatingAmount>
+    <VeryBase>UAH</VeryBase>
+
+    <Steps>
+      <Step order="1" api="kuna" type="buy" base="BTC" fund="UAH" fee="0.25%"/>
+      <Step order="2" api="kuna" type="buy" base="BCH" fund="BTC" fee="0.25%" interval="5"/>
+      <Step order="3" api="kuna" type="sell" base="BCH" fund="UAH" fee="0.25%" interval="5"/>
+    </Steps>
+  </Bot>
+</TemamaTradingConfig>

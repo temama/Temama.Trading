@@ -12,6 +12,7 @@ namespace Temama.Trading.Exchanges.Exmo
         public static ExmoOrderBook FromJson(JObject json)
         {
             var res = new ExmoOrderBook();
+            json = json.First.First as JObject;
             foreach (JArray orderJson in (json["ask"] as JArray))
             {
                 res.Asks.Add(new ExmoOrder()

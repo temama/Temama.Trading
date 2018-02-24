@@ -14,7 +14,7 @@ namespace Temama.Trading.Exchanges.Exmo
 
             foreach (var cur in currencies)
             {
-                res.Values[cur] = Convert.ToDouble(json["balances"][cur.ToUpper()].ToString(), CultureInfo.InvariantCulture);
+                res.Values[cur.ToUpper()] = Convert.ToDouble(json["balances"][cur.ToUpper()].ToString(), CultureInfo.InvariantCulture);
             }
 
             return res;

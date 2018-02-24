@@ -249,5 +249,10 @@ namespace Temama.Trading.Exchanges.Cex
                 return BitConverter.ToString(hashmessage).Replace("-", string.Empty).ToUpper();
             }
         }
+
+        public override void Withdraw(string currency, string wallet)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

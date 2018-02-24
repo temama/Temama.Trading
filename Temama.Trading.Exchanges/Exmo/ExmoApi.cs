@@ -54,7 +54,7 @@ namespace Temama.Trading.Exchanges.Exmo
 
         public override OrderBook GetOrderBook(string baseCur, string fundCur)
         {
-            var uri = _baseUri + $"order_book/?pair={baseCur.ToUpper()}_{fundCur.ToUpper()}/";
+            var uri = _baseUri + $"order_book/?pair={baseCur.ToUpper()}_{fundCur.ToUpper()}";
             _log.Spam("Request: " + uri);
             var response = WebApi.Query(uri);
             _log.Spam("GetOrderBoor: response: " + response);
@@ -235,6 +235,11 @@ namespace Temama.Trading.Exchanges.Exmo
         }
 
         public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Withdraw(string currency, string wallet)
         {
             throw new NotImplementedException();
         }

@@ -86,8 +86,8 @@ namespace Temama.Trading.Core.Algo
             _api = Globals.CreateApiByName(apiNode.Attributes["exchange"].Value, apiNode, _log);
 
             _interval = Convert.ToInt32(config.GetConfigValue("ExecuteInterval"));
-            _base = config.GetConfigValue("BaseCurrency", true);
-            _fund = config.GetConfigValue("FundCurrency", true);
+            _base = config.GetConfigValue("BaseCurrency", true).ToUpper();
+            _fund = config.GetConfigValue("FundCurrency", true).ToUpper();
             _minBaseToTrade = Convert.ToDouble(config.GetConfigValue("MinBaseToTrade"), CultureInfo.InvariantCulture);
             _minFundToTrade = Convert.ToDouble(config.GetConfigValue("MinFundToTrade"), CultureInfo.InvariantCulture);
             _maxFundsToOperate = Convert.ToDouble(config.GetConfigValue("MaxFundToOperate", true, "0"), CultureInfo.InvariantCulture);
@@ -161,7 +161,7 @@ namespace Temama.Trading.Core.Algo
             _log.Important($"Fiat balance: {GetFiatBalance()}");
         }
 
-        public double GetFiatBalance()
+        public virtual double GetFiatBalance()
         {
             if (!_iterationStatsUpdated)
                 UpdateIterationStats();

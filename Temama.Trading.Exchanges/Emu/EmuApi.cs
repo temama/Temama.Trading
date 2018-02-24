@@ -123,7 +123,7 @@ namespace Temama.Trading.Exchanges.Emu
             var funds = new Funds();
             foreach (var f in _userFunds.Values)
             {
-                funds.Values.Add(f.Key, f.Value);
+                funds.Values.Add(f.Key.ToUpper(), f.Value);
             }
             return funds;
         }
@@ -344,6 +344,11 @@ namespace Temama.Trading.Exchanges.Emu
             _trades.Sort(Trade.SortByDate);
             _ticksStartDate = _trades[0].CreatedAt;
             _ticksEndDate = _trades[_trades.Count - 1].CreatedAt;
+        }
+
+        public override void Withdraw(string currency, string wallet)
+        {
+            throw new NotImplementedException();
         }
     }
 }

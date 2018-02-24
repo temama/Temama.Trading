@@ -17,7 +17,7 @@ namespace Temama.Trading.Exchanges.Cex
 
             foreach (var cur in currencies)
             {
-                res.Values[cur] = Convert.ToDouble(json[cur.ToUpper()]["available"].ToString(), CultureInfo.InvariantCulture);
+                res.Values[cur.ToUpper()] = Convert.ToDouble(json[cur.ToUpper()]["available"].ToString(), CultureInfo.InvariantCulture);
             }
 
             return res;

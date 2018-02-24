@@ -19,7 +19,7 @@ namespace Temama.Trading.Exchanges.Kuna
             {
                 if (currencies.Contains(acc["currency"].ToString().ToLower()))
                 {
-                    res.Values[acc["currency"].ToString()] = Convert.ToDouble(acc["balance"].ToString(), CultureInfo.InvariantCulture);
+                    res.Values[acc["currency"].ToString().ToUpper()] = Convert.ToDouble(acc["balance"].ToString(), CultureInfo.InvariantCulture);
                 }
             }
 

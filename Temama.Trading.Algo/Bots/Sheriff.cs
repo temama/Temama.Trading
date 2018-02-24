@@ -17,8 +17,7 @@ namespace Temama.Trading.Algo.Bots
     public class Sheriff : TradingBot
     {
         private double _imbalanceValue;
-
-        private int _interval = 60;
+        
         private double _sellFarPercent;
         private double _sellNearPercent;
         private double _buyNearPercent;
