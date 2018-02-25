@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Algo;
@@ -11,7 +10,6 @@ using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
 using Temama.Trading.Core.Utils;
 using Temama.Trading.Exchanges;
-using Temama.Trading.Exchanges.Emu;
 
 namespace Temama.Trading.Emulator
 {

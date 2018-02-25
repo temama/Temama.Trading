@@ -51,6 +51,11 @@ namespace Temama.Trading.Core.Algo
         protected Funds _funds;
         protected List<Order> _openOrders;
 
+        // Overall stats
+        protected int _orderPlaced = 0;
+        protected int _orderCancelled = 0;
+        protected int _marketTradesDone = 0;
+
         public string WhoAmI
         {
             get
@@ -159,6 +164,9 @@ namespace Temama.Trading.Core.Algo
                 _emulationDateTime = _emulationDateTime.AddSeconds(_interval);
             }
             _log.Important($"Fiat balance: {GetFiatBalance()}");
+            _log.Important($"Order Placed: {_orderPlaced}");
+            _log.Important($"Order cancelled: {_orderCancelled}");
+            _log.Important($"Market trades done: {_marketTradesDone}");
         }
 
         public virtual double GetFiatBalance()
@@ -397,24 +405,28 @@ namespace Temama.Trading.Core.Algo
         {
             _log.Important($"{WhoAmI} placed order: {order}");
             NotificationManager.SendImportant(WhoAmI, $"Order placed: {order}");
+            _orderPlaced++;
         }
 
         protected virtual void NotifyOrderCancel(Order order)
         {
             _log.Warning($"{WhoAmI} cancelled order: {order}");
             NotificationManager.SendWarning(WhoAmI, $"Order cancelled: {order}");
+            _orderCancelled++;
         }
 
         protected virtual void NotifyMarketTradeDone(Trade trade)
         {
             _log.Important($"{WhoAmI} Market trade done: {trade}");
             NotificationManager.SendImportant(WhoAmI, $"Market trade done: {trade}");
+            _marketTradesDone++;
         }
 
         protected virtual void NotifyMarketTradeDone(Order order)
         {
             _log.Important($"{WhoAmI} Market trade done: {order}");
             NotificationManager.SendImportant(WhoAmI, $"Market trade done: {order}");
+            _marketTradesDone++;
         }
         
         /// <summary>
