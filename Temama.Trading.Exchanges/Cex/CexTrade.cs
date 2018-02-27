@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Temama.Trading.Core.Exchange;
+using Temama.Trading.Core.Utils;
 
 namespace Temama.Trading.Exchanges.Cex
 {
@@ -17,11 +18,11 @@ namespace Temama.Trading.Exchanges.Cex
         {
             var res = new CexTrade()
             {
-                Id = (json["id"] as JValue).Value.ToString(),
+                Id = (json["tid"] as JValue).Value.ToString(),
                 Side = (json["type"] as JValue).Value.ToString(),
                 Price = Convert.ToDouble((json["price"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
                 Volume = Convert.ToDouble((json["amount"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
-                CreatedAt = DateTime.Parse((json["time"] as JValue).Value.ToString())
+                CreatedAt = UnixTime.FromUnixTime(Convert.ToInt64((json["date"] as JValue).Value))
             };
 
             if (json["symbol1"] != null && json["symbol2"] != null)

@@ -167,6 +167,8 @@ namespace Temama.Trading.Exchanges.Cex
         {
             // Actually will save a bit more than "duration"
             _historicalPersistIntervals[$"{baseCur}{fundCur}"] = duration + TimeSpan.FromSeconds(duration.TotalSeconds / 2);
+            if (!_historical.ContainsKey($"{baseCur}{fundCur}"))
+                _historical[$"{baseCur}{fundCur}"] = new List<Trade>();
         }
 
         public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
