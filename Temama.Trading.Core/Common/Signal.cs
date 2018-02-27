@@ -1,6 +1,7 @@
 ﻿using NCalc;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace Temama.Trading.Core.Common
@@ -143,10 +144,10 @@ namespace Temama.Trading.Core.Common
                 if (Candles[i].Type == SignalCandle.SignalCandleType.Red && workingCandles[i].Green)
                     return false;
 
-                if (!CheckExpression(Candles[i].VolumeExpr, workingCandles) ||
-                    !CheckExpression(Candles[i].UpperShadowExpr, workingCandles) ||
-                    !CheckExpression(Candles[i].BodyExpr, workingCandles) ||
-                    !CheckExpression(Candles[i].LowerShadowExpr, workingCandles))
+                if (!CheckExpression(i, Candles[i].VolumeExpr, workingCandles, input) ||
+                    !CheckExpression(i, Candles[i].UpperShadowExpr, workingCandles, input) ||
+                    !CheckExpression(i, Candles[i].BodyExpr, workingCandles, input) ||
+                    !CheckExpression(i, Candles[i].LowerShadowExpr, workingCandles, input))
                 {
                     return false;
                 }
@@ -178,13 +179,89 @@ namespace Temama.Trading.Core.Common
             e.Parameters["AZ"] = ZeroTolerance;
         }
 
-        private bool CheckExpression(string expr, List<Candlestick> candles)
+        private object EvaluateParameter(string name, List<Candlestick> workingCandles)
+        {
+            // Constants:
+            switch (name)
+            {
+                case "AZ":
+                    return ZeroTolerance;
+            }
+
+            // Candles values:
+            var match = Regex.Match(name, @"c(\d+).(.*)\Z");
+            if (match.Success)
+            {
+                var i = Convert.ToInt32(match.Groups[1].Value);
+                var p = match.Groups[2].Value;
+                switch (p)
+                {
+                    case "v": return workingCandles[i].Volume;
+                    case "us": return workingCandles[i].UpperShadow;
+                    case "b": return workingCandles[i].Body;
+                    case "bm": return workingCandles[i].MidBody;
+                    case "m": return workingCandles[i].Mid;
+                    case "ls": return workingCandles[i].LowerShadow;
+                    case "o": return workingCandles[i].Open;
+                    case "c": return workingCandles[i].Close;
+                    case "l": return workingCandles[i].Low;
+                    case "h": return workingCandles[i].High;
+                }
+            }
+
+            throw new Exception($"Unknown parameter: {name}");
+        }
+
+        private object EvaluateFunction(int currentCandle, string name, FunctionArgs args, List<Candlestick> workingCandles, List<Candlestick> inputCandles)
+        {
+            if (name == "UT" || name == "DT")
+            {
+                return EvaluateUpDownTrend(currentCandle, name, args, workingCandles, inputCandles);
+            }
+            //else if (name == "SW")
+            //{
+
+            //}
+
+            throw new Exception($"Unknown function: {name}");
+        }
+
+        private bool EvaluateUpDownTrend(int currentCandle, string name, FunctionArgs args, List<Candlestick> workingCandles, List<Candlestick> inputCandles)
+        {
+            var cur = workingCandles[currentCandle];
+            var globalIndex = inputCandles.IndexOf(cur);
+            var p = (int)args.Parameters[0].Evaluate();
+            var ut = name == "UT";
+            if (globalIndex - p > 0)
+            {
+                for (int i = globalIndex - p + 1; i <= globalIndex; i++)
+                {
+                    if ((ut && inputCandles[i - 1].MidBody > inputCandles[i].MidBody) ||
+                        (!ut && inputCandles[i - 1].MidBody < inputCandles[i].MidBody))
+                        return false;
+                }
+                return true;
+            }
+            else
+                return false;
+        }
+
+        private bool CheckExpression(int currentCandle, string expr, List<Candlestick> workingCandles, List<Candlestick> inputCandles)
         {
             if (string.IsNullOrEmpty(expr))
                 return true;
 
             var e = new Expression(expr);
-            PopulateExpressionParams(e, candles);
+            //PopulateExpressionParams(e, candles);
+            e.EvaluateParameter += (string name, ParameterArgs args) =>
+            {
+                args.Result = EvaluateParameter(name, workingCandles);
+            };
+
+            e.EvaluateFunction += (string name, FunctionArgs args) =>
+            {
+                args.Result = EvaluateFunction(currentCandle, name, args, workingCandles, inputCandles);
+            };
             return Convert.ToBoolean(e.Evaluate());
         }
 

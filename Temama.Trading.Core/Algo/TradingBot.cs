@@ -45,6 +45,9 @@ namespace Temama.Trading.Core.Algo
         protected double _stopLossPercent = 0.0;
         protected double _stopLossDelay = 0.0;
 
+        // Analytics
+        protected int _pricePersistInterval = 0;
+
         // Iteration stats
         protected bool _iterationStatsUpdated = false;
         protected double _lastPrice = 0;
@@ -104,6 +107,8 @@ namespace Temama.Trading.Core.Algo
             _stopLossEnabled = Convert.ToBoolean(config.GetConfigValue("StopLossEnabled", true, "false"));
             _stopLossPercent = Convert.ToDouble(config.GetConfigValue("StopLossPercent", true, "0"), CultureInfo.InvariantCulture) * 0.01;
             _stopLossDelay = Convert.ToDouble(config.GetConfigValue("StopLossDelay", true, "0"), CultureInfo.InvariantCulture);
+
+            _pricePersistInterval = Convert.ToInt32(config.GetConfigValue("PricePersistInterval", true, "0"));
 
             _pair = _base + "/" + _fund;
 

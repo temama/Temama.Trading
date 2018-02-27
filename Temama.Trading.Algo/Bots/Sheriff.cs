@@ -89,8 +89,9 @@ namespace Temama.Trading.Algo.Bots
                     UpdateIterationStats();
                 }
             }
-            
-            // 2. If we have no buy orders and have many (>2) sell orders, convert far away sell orders to funds. And vice versa
+
+            // 2. If we have no buy orders and have many (>2) sell orders, convert far away sell orders to funds. 
+            //    And vice versa
             var _buyOrders = _openOrders.Where(o => o.Side == "buy");
             var _sellOrders = _openOrders.Where(o => o.Side == "sell");
             
@@ -98,13 +99,13 @@ namespace Temama.Trading.Algo.Bots
             PlaceBuyOrders(_buyOrders.Count() == 0);
             PlaceSellOrders(_sellOrders.Count() == 0);
         }
-        
+
         private void PlaceBuyOrders(bool splitAmount)
         {
             var amount = GetAlmolstAll(GetLimitedFundsAmount());
             var last = _lastPrice;
 
-            if (amount<_minFundToTrade)
+            if (amount < _minFundToTrade)
             {
                 _log.Spam("Not enough funds to place buy orders");
                 return;
@@ -122,7 +123,7 @@ namespace Temama.Trading.Algo.Bots
             }
             else
             {
-                var order = _api.PlaceOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyNearPercent, amount), 
+                var order = _api.PlaceOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyNearPercent, amount),
                     last - last * _buyNearPercent);
                 NotifyOrderPlaced(order);
             }
@@ -200,6 +201,15 @@ namespace Temama.Trading.Algo.Bots
                 }
             }
             return true;
+        }
+
+        protected override bool IsStopLoss(Order order, double price)
+        {
+            var cutofftime = (_emulation ? _emulationDateTime : DateTime.UtcNow) - TimeSpan.FromMinutes(_stopLossDelay);
+            if (order.CreatedAt > cutofftime)
+                return false;
+
+            return ((order.Price - price) / price >= _stopLossPercent);
         }
     }
 }

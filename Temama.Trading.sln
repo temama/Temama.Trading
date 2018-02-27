@@ -9,9 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temama.Trading.Exchanges", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temama.Trading.Algo", "Temama.Trading.Algo\Temama.Trading.Algo.csproj", "{057CE5FC-9294-48C4-93E6-E17E837265F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Console", "Temama.Trading.Console\Temama.Trading.Console.csproj", "{E61F415C-6B5F-45D6-AA09-226947046ABB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temama.Trading.Console", "Temama.Trading.Console\Temama.Trading.Console.csproj", "{E61F415C-6B5F-45D6-AA09-226947046ABB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Emulator", "Temama.Trading.Emulator\Temama.Trading.Emulator.csproj", "{615B885D-B632-4323-BBD3-282A6902030A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temama.Trading.Emulator", "Temama.Trading.Emulator\Temama.Trading.Emulator.csproj", "{615B885D-B632-4323-BBD3-282A6902030A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temama.Trading.Core.UnitTests", "Temama.Trading.Core.UnitTests\Temama.Trading.Core.UnitTests.csproj", "{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -105,6 +107,22 @@ Global
 		{615B885D-B632-4323-BBD3-282A6902030A}.Release|x64.Build.0 = Release|Any CPU
 		{615B885D-B632-4323-BBD3-282A6902030A}.Release|x86.ActiveCfg = Release|Any CPU
 		{615B885D-B632-4323-BBD3-282A6902030A}.Release|x86.Build.0 = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|ARM.Build.0 = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|x64.Build.0 = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Debug|x86.Build.0 = Debug|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|ARM.ActiveCfg = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|ARM.Build.0 = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|x64.ActiveCfg = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|x64.Build.0 = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|x86.ActiveCfg = Release|Any CPU
+		{5B5E4E60-BD6E-480E-A040-09CBAE9C926B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

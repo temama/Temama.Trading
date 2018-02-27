@@ -21,6 +21,7 @@
     <StopLossDelay>15</StopLossDelay>    <!-- 1 x CandlestickWidth -->
     <CandlestickWidth>15</CandlestickWidth>    <!-- Candlestick width in minutes-->
     <ZeroTolerance>0.0001</ZeroTolerance>
+    <PricePersistInterval>120</PricePersistInterval>    <!-- Persist prices for analitics in minutes -->
     <TakeProfit>1.15</TakeProfit>
     <Signals>
       <Signal name="hammer-ok">Red[[|&lt;-0.005|]];Green[[~0.0|&gt;0.0005|&lt;-2.5*[c.b]]];Green</Signal>

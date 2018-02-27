@@ -59,7 +59,11 @@ namespace Temama.Trading.Algo.Bots
             if (_signals.Count == 0)
                 throw new Exception("At least one signal should be provided at config");
 
-            _analitics.SetHistoricalTradesPersistInterval(_base, _fund, TimeSpan.FromMinutes(_candleWidth * (_maxSignalCandlesCount + 1)));
+            if (_pricePersistInterval == 0)
+            {
+                _pricePersistInterval = (int)_candleWidth * (_maxSignalCandlesCount + 1);
+            }
+            _analitics.SetHistoricalTradesPersistInterval(_base, _fund, TimeSpan.FromMinutes(_pricePersistInterval));
         }
 
         protected override void TradingIteration(DateTime dateTime)
@@ -166,7 +170,7 @@ namespace Temama.Trading.Algo.Bots
                 return null;
             }
 
-            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _candleWidth * _maxSignalCandlesCount));
+            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _pricePersistInterval));
             var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_candleWidth));
             CandlestickHelper.CompleteCandles(candles, iterationTime);
             
@@ -192,7 +196,6 @@ namespace Temama.Trading.Algo.Bots
 
             return null;
         }
-
 
         protected override bool IsStopLoss(Order order, double price)
         {
