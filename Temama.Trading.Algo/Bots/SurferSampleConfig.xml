@@ -13,21 +13,26 @@
     <FundCurrency>USD</FundCurrency>
     <MinBaseToTrade>0.001</MinBaseToTrade>
     <MinFundToTrade>2.5</MinFundToTrade>
-    <ExecuteInterval>30</ExecuteInterval>    <!-- Interval between bot iterations in seconds-->
+    <ExecuteInterval>30</ExecuteInterval>
+    <!-- Interval between bot iterations in seconds-->
     <FiatCheckInterval>180</FiatCheckInterval>    <!-- Fiat check interval in minutes -->
     <!--MaxFundToOperate>200</MaxFundToOperate-->
     <StopLossEnabled>true</StopLossEnabled>
-    <StopLossPercent>0.39</StopLossPercent>
-    <StopLossDelay>15</StopLossDelay>    <!-- 1 x CandlestickWidth -->
+    <StopLossPercent>0.4</StopLossPercent>
+    <StopLossDelay>10</StopLossDelay>
     <CandlestickWidth>15</CandlestickWidth>    <!-- Candlestick width in minutes-->
-    <ZeroTolerance>0.0001</ZeroTolerance>
-    <PricePersistInterval>120</PricePersistInterval>    <!-- Persist prices for analitics in minutes -->
-    <TakeProfit>1.15</TakeProfit>
+    <ZeroTolerance>0.00001</ZeroTolerance>
+    <TakeProfit>1.8</TakeProfit>
+    <!--PricePersistInterval>150</PricePersistInterval-->    <!-- Persist prices for analitics in minutes -->
     <Signals>
-      <Signal name="hammer-ok">Red[[|&lt;-0.005|]];Green[[~0.0|&gt;0.0005|&lt;-2.5*[c.b]]];Green</Signal>
-      <!--Signal>Green[[&lt;0.0001|&gt;0.009|]];Green[[&lt;0.0001|&gt;0.009|]];Green[[&lt;0.00001|&gt;0.009|]]</Signal-->
+      <!--Signal name="engulfing-DT-bad">{[c2.c]*(1+[c2.b])}a[[|DT(5)|]];r[[|&lt;-0.0005|]];g[[|([c.l]&lt;[c1.l]) and ([c.c]&gt;[c1.o]) and ([c.b]&gt;0.005)|]]</Signal-->
+      <Signal name="engulfing-good">r;r;r[[|&lt;-0.0005|]];g[[|([c.l]&lt;[c2.l]) and ([c.c]&gt;[c2.o]) and ([c.b]&gt;0.005)|]]</Signal>
+      <!--Signal name="engulfing-good-dynamic-profit">{[c3.c]*(1+[c3.b])}r;r;r[[|&lt;-0.0005|]];g[[|([c.l]&lt;[c2.l]) and ([c.c]&gt;[c2.o]) and ([c.b]&gt;0.005)|]]</Signal-->
+      <!--Signal name="3-stars-in-the-south??-DT">r;r[[~0.0|&lt;-0.001|&lt;-0.0001]];r[[|&gt;[c1.b]|[c.l]&gt;[c1.l]]];r[[~0.0|&gt;[c2.b]|~0.0]]</Signal-->
+      <!--Signal name="Counterattack-DT">r;r[[|&lt;-0.0005|]];g[[|(Abs([c1.b]-[c.b])&lt;0.0005) and (Abs([c.c]-[c1.c])&lt;[c.c]*0.001)|]]</Signal-->
+      <!--Signal name="hammer-ok">Red[[|&lt;-0.005|]];Green[[~0.0|&gt;0.0005|&lt;-2.5*[c.b]]];Green</Signal>      
       <Signal name="good-ok">Red;Red(&gt;[c0.v]);Red(&gt;[c1.v]);Green[[|&gt;0.002|]];Red[[|&gt;-0.001|]]</Signal>
-      <Signal name="reverser-hammer-ok">r;g[[&gt;2.5*[c.b]|&gt;0.0005|~0.0]];g[[|&gt;0.001|]]</Signal>
+      <Signal name="reverser-hammer-ok">r;g[[&gt;2.5*[c.b]|&gt;0.0005|~0.0]];g[[|&gt;0.001|]]</Signal-->
     </Signals>
   </Bot>
 </TemamaTradingConfig>
