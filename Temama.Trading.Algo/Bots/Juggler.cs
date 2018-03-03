@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Xml;
 using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Exchange;
@@ -335,14 +336,14 @@ namespace Temama.Trading.Algo.Bots
                     var availableFunds = GetAvailableFundsToStart();
                     if (availableFunds >= _operatingAmount)
                     {
-                        _currentAmountToOperate = availableFunds;
+                        _currentAmountToOperate = _operatingAmount;
                         if (!_monitorMode)
                         {
                             _log.Important($"Starting scenario... Expected profit={(res.Profit * 100).ToString("0.##")}%");
                             _inGame = true;
                             _currentStep = 0;
                             SetupStep(_steps[0]);
-                            _beforeRunFiat = GetFiatBalance();
+                            _beforeRunFiat = _steps[0].Api.GetFunds(_veryBase, _veryBase).Values[_veryBase];
                         }
                         else
                         {
@@ -371,7 +372,7 @@ namespace Temama.Trading.Algo.Bots
                             _inGame = false;
                             _currentStep = 0;
                             SetupStep(_steps[0]);
-                            var afterRun = GetFiatBalance();
+                            var afterRun = _steps[0].Api.GetFunds(_veryBase,_veryBase).Values[_veryBase];
                             _log.Important($"Scenario completted. Profit={afterRun - _beforeRunFiat}{_veryBase}");
                         }
                         else

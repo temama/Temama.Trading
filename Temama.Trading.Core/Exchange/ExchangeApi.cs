@@ -68,7 +68,7 @@ namespace Temama.Trading.Core.Exchange
 
         public virtual double CalculateBuyVolume(double price, double fund)
         {
-            return Math.Round(Math.Floor(fund) / price, 6);
+            return Math.Round(fund / price, 6);
         }
 
         public virtual double GetRoundedSellVolume(double vol)
