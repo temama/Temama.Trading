@@ -156,29 +156,21 @@ namespace Temama.Trading.Core.Common
             if (!string.IsNullOrEmpty(PriceChangeExpectationExpr))
             {
                 var e = new Expression(PriceChangeExpectationExpr);
-                PopulateExpressionParams(e, workingCandles);
+                e.EvaluateParameter += (string name, ParameterArgs args) =>
+                {
+                    args.Result = EvaluateParameter(name, workingCandles);
+                };
+
+                e.EvaluateFunction += (string name, FunctionArgs args) =>
+                {
+                    args.Result = EvaluateFunction(CandlesCount - 1, name, args, workingCandles, input);
+                };
                 LastPriceExpectation = Convert.ToDouble(e.Evaluate());
             }
 
             return true;
         }
-
-        private void PopulateExpressionParams(Expression e, List<Candlestick> candles)
-        {
-            for (int i = 0; i < candles.Count; i++)
-            {
-                e.Parameters[$"c{i}.v"] = candles[i].Volume;
-                e.Parameters[$"c{i}.us"] = candles[i].UpperShadow;
-                e.Parameters[$"c{i}.b"] = candles[i].Body;
-                e.Parameters[$"c{i}.ls"] = candles[i].LowerShadow;
-                e.Parameters[$"c{i}.o"] = candles[i].Open;
-                e.Parameters[$"c{i}.c"] = candles[i].Close;
-                e.Parameters[$"c{i}.h"] = candles[i].High;
-                e.Parameters[$"c{i}.l"] = candles[i].Low;
-            }
-            e.Parameters["AZ"] = ZeroTolerance;
-        }
-
+        
         private object EvaluateParameter(string name, List<Candlestick> workingCandles)
         {
             // Constants:
@@ -234,13 +226,14 @@ namespace Temama.Trading.Core.Common
             var ut = name == "UT";
             if (globalIndex - p > 0)
             {
-                for (int i = globalIndex - p + 1; i <= globalIndex; i++)
+                // Calculating by Moving Avarage
+                var sum = 0.0;
+                for (int i = globalIndex - p; i < globalIndex; i++)
                 {
-                    if ((ut && inputCandles[i - 1].MidBody > inputCandles[i].MidBody) ||
-                        (!ut && inputCandles[i - 1].MidBody < inputCandles[i].MidBody))
-                        return false;
+                    sum += inputCandles[i].Close;
                 }
-                return true;
+                var ma = sum / p;
+                return ut ? cur.Open > ma : cur.Open < ma;
             }
             else
                 return false;
