@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Xml;
 using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Common;
@@ -174,19 +175,27 @@ namespace Temama.Trading.Algo.Bots
             var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_candleWidth));
             CandlestickHelper.CompleteCandles(candles, iterationTime);
             
-            if (candles.Count == 0 ||
-                iterationTime - TimeSpan.FromSeconds(_interval) > candles[candles.Count - 1].Start)
+            if (candles.Count == 0)
             {
-                // CheckSignals should be done only once per candle interval - at the very begining
                 return null;
             }
 
+            if (iterationTime - TimeSpan.FromSeconds(_interval) > candles[candles.Count - 1].Start)
+            {
+                // CheckSignals should be done only once per candle interval - at the very begining
+                _log.Info($"Waiting for next candle... Est: {(int)(candles.Last().Start.AddMinutes(_candleWidth)-iterationTime).TotalSeconds} seconds");
+                return null;
+            }
+
+            // !!THIS IS INCORRECT!! Not always it's last
             // Removing last (just opened) candle
             candles.RemoveAt(candles.Count - 1);
             if (candles.Count == 0)
             {
                 return null;
             }
+
+            _log.Info("Verifying signals...");
 
             foreach (var signal in _signals)
             {

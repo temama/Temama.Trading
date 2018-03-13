@@ -31,6 +31,8 @@ namespace Temama.Trading.Algo
                     return new Surfer(config, logHandler);
                 case "juggler":
                     return new Juggler(config, logHandler);
+                case "man":
+                    return new Man(config, logHandler);
             }
 
             throw new Exception($"No Bot with name={botName} found");
