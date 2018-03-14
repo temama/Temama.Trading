@@ -63,8 +63,13 @@ namespace Temama.Trading.Core.Algo
         {
             get
             {
-                return $"{Name()} on {_api.Name()} [{_pair}]";
+                return WhoAmIValue();
             }
+        }
+
+        protected virtual string WhoAmIValue()
+        {
+            return $"{Name()} on {_api.Name()} [{_pair}]";
         }
 
         public virtual string Name()

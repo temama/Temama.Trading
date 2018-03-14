@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TemamaTradingConfig>
+  <Bot name="Hyper" displayName="example" autostart="true">
+    <Api exchange="Cex"> <!-- API -->
+      <PublicKey></PublicKey>
+      <SecretKey></SecretKey>
+      <UserID>up0000000</UserID>
+      <!-- This is needed for CEX.IO -->
+    </Api>
+
+    <!-- Algo -->
+    <!-- Dummy values start -->
+    <BaseCurrency>eth</BaseCurrency>
+    <FundCurrency>usd</FundCurrency>
+    <MinBaseToTrade>0.001</MinBaseToTrade>
+    <MinFundToTrade>2.5</MinFundToTrade>
+    <ExecuteInterval>30</ExecuteInterval>    <!-- Interval between bot iterations in seconds-->
+    <!-- Dummy values end -->
+    <TopCoins>10</TopCoins>
+    <HypePercent>0.3</HypePercent>
+    <StopCoins>5</StopCoins>
+    <StopPercent>0.1</StopPercent>
+    <MonitorMode>true</MonitorMode>
+  </Bot>
+</TemamaTradingConfig>

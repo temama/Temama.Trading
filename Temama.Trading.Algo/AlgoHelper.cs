@@ -33,6 +33,8 @@ namespace Temama.Trading.Algo
                     return new Juggler(config, logHandler);
                 case "man":
                     return new Man(config, logHandler);
+                case "hyper":
+                    return new Hyper(config, logHandler);
             }
 
             throw new Exception($"No Bot with name={botName} found");
