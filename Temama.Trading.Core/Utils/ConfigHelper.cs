@@ -4,6 +4,7 @@ using System.Text;
 using System.Xml;
 using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Notifications;
 
 namespace Temama.Trading.Core.Utils
 {
@@ -19,6 +20,20 @@ namespace Temama.Trading.Core.Utils
                 return defaultValue;
 
             throw new Exception($"Config {configName} is not found");
+        }
+
+        public static List<INotifyer> InitNotifyersFromConfig(XmlDocument config, Logger.Logger logger)
+        {
+            var res = new List<INotifyer>();
+
+            foreach (XmlNode notif in config.SelectNodes("//TemamaTradingConfig/Notifyer"))
+            {
+                var notifyer = NotificationManager.Create(notif, logger);
+                NotificationManager.Add(notifyer);
+                res.Add(notifyer);
+            }
+
+            return res;
         }
 
         public static List<IAlgo> GetAlgosFromConfig(XmlDocument config, ILogHandler logHandler)

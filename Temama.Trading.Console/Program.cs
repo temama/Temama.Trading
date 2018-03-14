@@ -19,8 +19,6 @@ namespace Temama.Trading.Console
 {
     public class Program
     {
-        private static TradingBot _algo;
-
         public class LoggerConsoleEcho : ILogHandler
         {
             private static object _token = new object();
@@ -93,6 +91,7 @@ namespace Temama.Trading.Console
 
             var config = new XmlDocument();
             config.Load(configFile);
+            ConfigHelper.InitNotifyersFromConfig(config, Globals.Logger);
             var algos = ConfigHelper.GetAlgosFromConfig(config, logHandler);
             var caption = new StringBuilder();
             var processes = new List<Task>();
@@ -126,7 +125,7 @@ namespace Temama.Trading.Console
         {
             var resp = new StringBuilder();
             resp.Append("<HTML><BODY><h1>Temama Trading</h1><br>");
-            resp.Append(HtmlReportHelper.ReportRunningBots(new List<TradingBot>() { _algo }));
+            //resp.Append(HtmlReportHelper.ReportRunningBots(new List<TradingBot>() { _algo }));
             resp.Append("</BODY></HTML>");
             return resp.ToString();
         }

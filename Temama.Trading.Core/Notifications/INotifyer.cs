@@ -1,6 +1,6 @@
 ﻿namespace Temama.Trading.Core.Notifications
 {
-    public interface INotificator
+    public interface INotifyer
     {
         void SendInfo(string who, string message);
 

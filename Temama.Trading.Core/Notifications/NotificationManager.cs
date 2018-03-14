@@ -3,48 +3,65 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
+using Temama.Trading.Core.Logger;
 
 namespace Temama.Trading.Core.Notifications
 {
     public class NotificationManager
     {
-        private static INotificator _notificator;
+        private static List<INotifyer> notifyers = new List<INotifyer>();
 
-        public static void Init(INotificator notificator)
+        public static INotifyer Create(XmlNode config, Logger.Logger logHandler)
         {
-            _notificator = notificator;
+            var nameAttr = config.Attributes["name"];
+            if (nameAttr == null)
+                throw new Exception("No Notifyer name at config: " + config.OuterXml);
+
+            switch (nameAttr.Value.ToLower())
+            {
+                case "email":
+                    return new EmailNotifyer(config, logHandler);
+                default:
+                    throw new Exception("Unknown Notifyer: " + nameAttr.Value);
+            }
+        }
+
+        public static void Add(INotifyer notifyer)
+        {
+            notifyers.Add(notifyer);
         }
 
         public static void SendError(string who, string message)
         {
-            if (_notificator == null)
-                return;
-            
-            _notificator.SendError(who, message);
+            foreach (var n in notifyers)
+            {
+                n.SendError(who, message);
+            }
         }
 
         public static void SendInfo(string who, string message)
         {
-            if (_notificator == null)
-                return;
-            
-            _notificator.SendInfo(who, message);
+            foreach (var n in notifyers)
+            {
+                n.SendInfo(who, message);
+            }
         }
 
         public static void SendImportant(string who, string message)
         {
-            if (_notificator == null)
-                return;
-            
-            _notificator.SendImportant(who, message);
+            foreach (var n in notifyers)
+            {
+                n.SendImportant(who, message);
+            }
         }
 
         public static void SendWarning(string who, string message)
         {
-            if (_notificator == null)
-                return;
-
-            _notificator.SendWarning(who, message);
+            foreach (var n in notifyers)
+            {
+                n.SendWarning(who, message);
+            }
         }
     }
 }

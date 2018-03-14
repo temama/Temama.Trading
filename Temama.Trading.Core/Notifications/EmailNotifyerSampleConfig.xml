@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TemamaTradingConfig>
+  <Notifyer name="email">
+    <!-- Note: you may need to turn on access for less secure apps:
+        https://myaccount.google.com/lesssecureapps -->
+    <SmtpHost>smtp.gmail.com</SmtpHost>
+    <SmtpPort>587</SmtpPort>
+    <FromAddress>your@gmail.com</FromAddress>
+    <ToAddresses>your@gmail.coml;someOther@email.com</ToAddresses>
+    <Password>your@gmail.com-password</Password>
+  </Notifyer>
+</TemamaTradingConfig>
