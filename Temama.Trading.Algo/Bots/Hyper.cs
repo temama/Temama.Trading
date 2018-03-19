@@ -22,7 +22,6 @@ namespace Temama.Trading.Algo.Bots
         private bool _monitorMode = true;
 
         private bool _hypeMode = false;
-        private Dictionary<string, double> _maxData = new Dictionary<string, double>();
 
         public Hyper(XmlNode config, ILogHandler logHandler) : base(config, logHandler)
         {
@@ -31,9 +30,9 @@ namespace Temama.Trading.Algo.Bots
         protected override void InitAlgo(XmlNode config)
         {
             _topCoins = Convert.ToInt32(config.GetConfigValue("TopCoins", true, "10"));
-            _stopCoins = Convert.ToInt32(config.GetConfigValue("StopCoins", true, "5"));
+            _stopCoins = Convert.ToInt32(config.GetConfigValue("StopCoins", true, "3"));
             _hypePercent = Convert.ToDouble(config.GetConfigValue("HypePercent", true, "0.3"), CultureInfo.InvariantCulture);
-            _stopPercent = Convert.ToDouble(config.GetConfigValue("StopPercent", true, "0.1"), CultureInfo.InvariantCulture);
+            _stopPercent = Convert.ToDouble(config.GetConfigValue("StopPercent", true, "0.3"), CultureInfo.InvariantCulture);
             _monitorMode = Convert.ToBoolean(config.GetConfigValue("MonitorMode", true, "true"));
         }
 
@@ -45,20 +44,12 @@ namespace Temama.Trading.Algo.Bots
 
             if (_hypeMode)
             {
-                foreach (var kvp in latest)
-                {
-                    if (!_maxData.ContainsKey(kvp.Key) ||
-                        (kvp.Value > _maxData[kvp.Key]))
-                        _maxData[kvp.Key] = kvp.Value;
-                }
-
-                var fallingCount = latest.Count(kv=> _maxData[kv.Key] - kv.Value > _stopPercent);
+                var fallingCount = latest.Count(kv=> kv.Value < _stopPercent);
 
                 // End of hype
                 if (fallingCount >= _stopCoins)
                 {
                     var msg = $"HYPE Ended with values: {GetDataRepresentation(latest)}";
-                    _maxData = new Dictionary<string, double>();
                     _hypeMode = false;
                     _log.Warning(msg);
                     NotificationManager.SendWarning(WhoAmI, msg);
@@ -71,7 +62,6 @@ namespace Temama.Trading.Algo.Bots
                 if (startOfHype)
                 {
                     var msg = $"HYPE STARTED with values: {GetDataRepresentation(latest)}";
-                    _maxData = latest;
                     _hypeMode = true;
                     _log.Important(msg);
                     NotificationManager.SendImportant(WhoAmI, msg);
