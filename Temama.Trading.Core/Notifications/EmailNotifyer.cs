@@ -27,12 +27,14 @@ namespace Temama.Trading.Core.Notifications
             public string Who { get; set; }
             public MsgType Type { get; set; }
             public string Message { get; set; }
+            public DateTime Time { get; set; }
 
             public ToSend(string who, MsgType msgType, string message)
             {
                 Who = who;
                 Type = msgType;
                 Message = message;
+                Time = DateTime.UtcNow;
             }
         }
 
@@ -141,7 +143,8 @@ namespace Temama.Trading.Core.Notifications
                         body.AppendLine("<ul>");
                         foreach (var notif in kvp.Value)
                         {
-                            body.Append("<ui>");
+                            body.Append("<li>");
+                            body.Append(notif.Time.ToString("yyyy/MM/dd HH:mm:ss") + " UTC - ");
                             switch (notif.Type)
                             {
                                 case MsgType.Important:
@@ -157,7 +160,7 @@ namespace Temama.Trading.Core.Notifications
                                     body.Append(notif.Message);
                                     break;
                             }
-                            body.AppendLine("</ui>");
+                            body.AppendLine("</li>");
                         }
                         body.AppendLine("</ul>");
                         body.AppendLine("<hr/>");

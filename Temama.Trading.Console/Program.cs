@@ -81,7 +81,7 @@ namespace Temama.Trading.Console
             if (args.Length > 0)
                 configFile = args[0];
 
-            Logger.CleanupLogsDir(10);
+            Logger.CleanupLogsDir(3);
             var logHandler = new LoggerConsoleEcho();
             Globals.Logger.Init("Temama.Trading.Console", logHandler);
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;

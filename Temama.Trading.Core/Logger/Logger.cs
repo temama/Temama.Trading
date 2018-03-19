@@ -8,14 +8,14 @@ namespace Temama.Trading.Core.Logger
         public static LogSeverity GlobalLogLevel = LogSeverity.Spam;
         public static bool WriteToFile = true;
         private object _token = new object();
-        private string _fileName = @"Logs\Temama.Trading.log";
+        private string _fileName = "Temama.Trading.log";
         private LogSeverity _logLevel = LogSeverity.Spam;
 
         private ILogHandler _logHandler;
 
         public Logger()
         {
-
+            _fileName = Path.Combine("Logs", "Temama.Trading.log");
         }
 
         public Logger(string ownerName, ILogHandler logHandler, LogSeverity logLevel = LogSeverity.Spam)
@@ -28,7 +28,7 @@ namespace Temama.Trading.Core.Logger
             if (!Directory.Exists("Logs"))
                 Directory.CreateDirectory("Logs");
 
-            _fileName = string.Format("Logs\\{0}_{1}.log", ownerName, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            _fileName = Path.Combine("Logs", string.Format("{0}_{1}.log", ownerName, DateTime.Now.ToString("yyyyMMdd_HHmmss")));
             _logHandler = logHandler;
             _logLevel = logLevel;
         }
