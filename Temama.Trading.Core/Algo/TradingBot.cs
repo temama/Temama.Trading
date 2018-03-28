@@ -471,5 +471,10 @@ namespace Temama.Trading.Core.Algo
 
         private TradingBot()
         { }
+
+        protected string NumStr(double val)
+        {
+            return val >= 0 ? "+" + val.ToString() : val.ToString();
+        }
     }
 }

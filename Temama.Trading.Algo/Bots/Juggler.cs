@@ -8,6 +8,7 @@ using System.Xml;
 using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
+using Temama.Trading.Core.Notifications;
 using Temama.Trading.Core.Utils;
 
 namespace Temama.Trading.Algo.Bots
@@ -330,9 +331,11 @@ namespace Temama.Trading.Algo.Bots
             if (!_inGame)
             {
                 var res = VerifyScenario();
-                _log.Info($"{DisplayName}: Scenario profit={(res.Profit * 100).ToString("0.##")}%; ExpectedRes={res.ExpectedRes.ToString("0.##")}/{_operatingAmount}{_veryBase}");
+                var msg = $"{DisplayName}: Scenario profit={(res.Profit * 100).ToString("0.##")}%; ExpectedRes={res.ExpectedRes.ToString("0.##")}/{_operatingAmount}{_veryBase}";
+                _log.Info(msg);
                 if (res.Profit >= _profitToPlay)
                 {
+                    NotificationManager.SendImportant(WhoAmI, msg);
                     var availableFunds = GetAvailableFundsToStart();
                     if (availableFunds >= _operatingAmount)
                     {
