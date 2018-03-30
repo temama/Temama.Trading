@@ -14,14 +14,6 @@ namespace Temama.Trading.Algo.Bots
 {
     public class Hyper : TradingBot
     {
-        private class CoinStat
-        {
-            public string Id { get; set; }
-            public double PriceChange { get; set; }
-            public DateTime TimeStamp { get; set; }
-            public double Delta { get; set; }
-        }
-
         private static string _baseUrl = "https://api.coinmarketcap.com/v1/ticker/?limit=";
         private int _topCoins = 10;
         private int _stopCoins = 5;
@@ -29,7 +21,6 @@ namespace Temama.Trading.Algo.Bots
         private double _stopPercent = 0.0;
         private bool _monitorMode = true;
 
-        private Dictionary<string, CoinStat> _stats = null;
         private bool _hypeMode = false;
 
         public Hyper(XmlNode config, ILogHandler logHandler) : base(config, logHandler)
@@ -48,81 +39,50 @@ namespace Temama.Trading.Algo.Bots
         protected override void TradingIteration(DateTime dateTime)
         {
             var latest = GetLatest();
-            
-            if (_stats == null || latest.Keys.Any(k => !_stats.Keys.Contains(k)))
-            {
-                _stats = latest;
-                _log.Info($"Latest stats: {GetDataRepresentation(_stats)}");
-                if (_hypeMode)
-                    OnHypeEnded();
-
-                return;
-            }
-
-            foreach (var c in latest)
-            {
-                if (c.Value.TimeStamp > _stats[c.Key].TimeStamp)
-                {
-                    var sc = _stats[c.Key];
-                    sc.Delta = c.Value.PriceChange - sc.PriceChange;
-                    sc.PriceChange = c.Value.PriceChange;
-                    sc.TimeStamp = c.Value.TimeStamp;
-                }
-            }
-
-            _log.Info($"Latest stats: {GetDataRepresentation(_stats)}");
+            _log.Info($"Latest stats: {GetDataRepresentation(latest)}");
 
             if (_hypeMode)
             {
-                var fallingCount = _stats.Count(kv=> kv.Value.Delta < _stopPercent);
+                var fallingCount = latest.Count(kv=> kv.Value < _stopPercent);
 
                 // End of hype
                 if (fallingCount >= _stopCoins)
                 {  
-                    OnHypeEnded();
+                    OnHypeEnded(latest);
                 }
             }
             else
             {
-                var startOfHype = _stats.All(kv => kv.Value.Delta >= _hypePercent);
+                var startOfHype = latest.All(kv => kv.Value >= _hypePercent);
                 if (startOfHype)
                 {
-                    OnHypeStarted();
+                    OnHypeStarted(latest);
                 }
             }
         }
 
-        private string GetDataRepresentation(Dictionary<string, CoinStat> data)
+        private string GetDataRepresentation(Dictionary<string, double> data)
         {
-            return "[" +
-                string.Join("; ", data.Select(kv => $"{kv.Key}:{NumStr(kv.Value.PriceChange)}[{NumStr(kv.Value.Delta)}]"))
-                + "]";
+            return "[" + string.Join("; ", data.Select(kv => $"{kv.Key}:{NumStr(kv.Value)}")) + "]";
         }
 
-        private Dictionary<string, CoinStat> GetLatest()
+        private Dictionary<string, double> GetLatest()
         {
-            var res = new Dictionary<string, CoinStat>();
+            var res = new Dictionary<string, double>();
             var response = WebApi.Query(_baseUrl + _topCoins);
             var json = JArray.Parse(response);
             foreach (JObject o in json)
             {
                 var id = (o["id"] as JValue).Value.ToString();
                 var change = Convert.ToDouble((o["percent_change_1h"] as JValue).Value.ToString(), CultureInfo.InvariantCulture);
-                var time = UnixTime.FromUnixTime(Convert.ToInt64((o["last_updated"] as JValue).Value));
-                res[id] = new CoinStat
-                {
-                    Id = id,
-                    TimeStamp = time,
-                    PriceChange = change,
-                    Delta = 0
-                };
+                res[id] = change;
             }
             return res;
         }
 
-        private void OnHypeStarted()
+        private void OnHypeStarted(Dictionary<string, double> stats)
         {
-            var msg = $"HYPE STARTED with values: {GetDataRepresentation(_stats)}";
+            var msg = $"HYPE STARTED with values: {GetDataRepresentation(stats)}";
             _hypeMode = true;
             _log.Important(msg);
             NotificationManager.SendImportant(WhoAmI, msg);
@@ -134,9 +94,9 @@ namespace Temama.Trading.Algo.Bots
             }
         }
 
-        private void OnHypeEnded()
+        private void OnHypeEnded(Dictionary<string, double> stats)
         {
-            var msg = $"HYPE Ended with values: {GetDataRepresentation(_stats)}";
+            var msg = $"HYPE Ended with values: {GetDataRepresentation(stats)}";
             _hypeMode = false;
             _log.Warning(msg);
             NotificationManager.SendWarning(WhoAmI, msg);
