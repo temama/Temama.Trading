@@ -176,7 +176,8 @@ namespace Temama.Trading.Exchanges.Cex
             if (fetchLatest)
                 GetRecentTrades(baseCur, fundCur, dateTime);
 
-            return _historical[$"{baseCur}{fundCur}"][0].CreatedAt <= dateTime;
+            return _historical[$"{baseCur}{fundCur}"].Count > 0 &&
+                _historical[$"{baseCur}{fundCur}"][0].CreatedAt <= dateTime;
         }
 
         private void UpdateHistorical(string baseCur, string fundCur, List<Trade> trades)

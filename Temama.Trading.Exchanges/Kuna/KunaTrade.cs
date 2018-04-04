@@ -19,7 +19,8 @@ namespace Temama.Trading.Exchanges.Kuna
             {
                 Id = ((json["id"] as JValue).Value).ToString(),
                 Pair = ((json["market"] as JValue).Value).ToString(),
-                Side = (json["side"] as JValue).Value.ToString() == "ask" ? "sell" : "buy",
+                Side = (((json["side"] as JValue).Value == null) ? "" : 
+                    ((json["side"] as JValue).Value.ToString() == "ask" ? "sell" : "buy")),
                 Price = Convert.ToDouble((json["price"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
                 Volume = Convert.ToDouble((json["volume"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
                 Funds = Convert.ToDouble((json["funds"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),

@@ -164,13 +164,14 @@ namespace Temama.Trading.Algo.Bots
 
         private Signal CheckSignals(DateTime iterationTime)
         {
+            // TODO: Convert everything to UTC
             if (!_analitics.HasHistoricalDataStartingFrom(_base, _fund,
                 iterationTime.AddMinutes(-1 * _minSignalCandlesCount * _candleWidth), true))
             {
                 _log.Info("Not enough historical data to perform iteration");
                 return null;
             }
-
+            
             var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _pricePersistInterval));
             var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_candleWidth));
             CandlestickHelper.CompleteCandles(candles, iterationTime);

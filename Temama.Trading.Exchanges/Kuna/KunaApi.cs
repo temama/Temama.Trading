@@ -18,9 +18,14 @@ namespace Temama.Trading.Exchanges.Kuna
 {
     public class KunaApi : ExchangeApi, IExchangeAnalitics
     {
+        private TimeSpan _defaultPersistInterval = TimeSpan.FromHours(1);
+        private object _locker = new object();
         private string _baseUri = "https://kuna.io/api/v2/";
         private string _publicKey;
         private string _secretKey;
+
+        private Dictionary<string, List<Trade>> _historical = new Dictionary<string, List<Trade>>();
+        private Dictionary<string, TimeSpan> _historicalPersistIntervals = new Dictionary<string, TimeSpan>();
 
         public override string Name()
         {
@@ -145,7 +150,10 @@ namespace Temama.Trading.Exchanges.Kuna
                     trades.Add(KunaTrade.FromJson(jTrade));
                 }
             }
-            return trades;
+
+            UpdateHistorical(baseCur, fundCur, trades);
+
+            return _historical[$"{baseCur}{fundCur}"].Where(t => t.CreatedAt >= fromDate).ToList(); ;
         }
 
         /// <summary>
@@ -203,12 +211,55 @@ namespace Temama.Trading.Exchanges.Kuna
 
         public void SetHistoricalTradesPersistInterval(string baseCur, string fundCur, TimeSpan duration)
         {
-            throw new NotImplementedException();
+            // Actually will save a bit more than "duration"
+            _historicalPersistIntervals[$"{baseCur}{fundCur}"] = duration + TimeSpan.FromSeconds(duration.TotalSeconds / 2);
+            if (!_historical.ContainsKey($"{baseCur}{fundCur}"))
+                _historical[$"{baseCur}{fundCur}"] = new List<Trade>();
         }
 
         public bool HasHistoricalDataStartingFrom(string baseCur, string fundCur, DateTime dateTime, bool fetchLatest = false)
         {
-            throw new NotImplementedException();
+            if (fetchLatest)
+                GetRecentTrades(baseCur, fundCur, dateTime);
+
+            return _historical[$"{baseCur}{fundCur}"].Count > 0 &&
+                _historical[$"{baseCur}{fundCur}"][0].CreatedAt <= dateTime;
+        }
+
+        private void UpdateHistorical(string baseCur, string fundCur, List<Trade> trades)
+        {
+            var lifetime = _historicalPersistIntervals[$"{baseCur}{fundCur}"];
+            if (lifetime == null)
+            {
+                SetHistoricalTradesPersistInterval(baseCur, fundCur, _defaultPersistInterval);
+                lifetime = _defaultPersistInterval;
+            }
+
+            var historical = _historical[$"{baseCur}{fundCur}"];
+            var toRemove = new List<Trade>();
+
+            lock (_locker)
+            {
+                foreach (var t in historical)
+                {
+                    if (t.CreatedAt < DateTime.UtcNow - lifetime)
+                        toRemove.Add(t);
+                }
+
+                foreach (var t in toRemove)
+                {
+                    historical.Remove(t);
+                }
+
+                foreach (var t in trades)
+                {
+                    if (!historical.Any(tt => tt.Id == t.Id))
+                        historical.Add(t);
+                }
+
+                historical.Sort(Trade.SortByDate);
+            }
+
         }
 
         public override void Withdraw(string currency, string wallet)
