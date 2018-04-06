@@ -164,27 +164,28 @@ namespace Temama.Trading.Algo.Bots
 
         private Signal CheckSignals(DateTime iterationTime)
         {
+            var time = iterationTime.ToUniversalTime();
             // TODO: Convert everything to UTC
             if (!_analitics.HasHistoricalDataStartingFrom(_base, _fund,
-                iterationTime.AddMinutes(-1 * _minSignalCandlesCount * _candleWidth), true))
+                time.AddMinutes(-1 * _minSignalCandlesCount * _candleWidth), true))
             {
                 _log.Info("Not enough historical data to perform iteration");
                 return null;
             }
-            
-            var stats = _analitics.GetRecentTrades(_base, _fund, iterationTime.AddMinutes(-1 * _pricePersistInterval));
+
+            var stats = _analitics.GetRecentTrades(_base, _fund, time.AddMinutes(-1 * _pricePersistInterval));
             var candles = CandlestickHelper.TradesToCandles(stats, TimeSpan.FromMinutes(_candleWidth));
-            CandlestickHelper.CompleteCandles(candles, iterationTime);
-            
+            CandlestickHelper.CompleteCandles(candles, time);
+
             if (candles.Count == 0)
             {
                 return null;
             }
 
-            if (iterationTime - TimeSpan.FromSeconds(_interval) > candles[candles.Count - 1].Start)
+            if (time - TimeSpan.FromSeconds(_interval) > candles[candles.Count - 1].Start)
             {
                 // CheckSignals should be done only once per candle interval - at the very begining
-                _log.Info($"Waiting for next candle... Est: {(int)(candles.Last().Start.AddMinutes(_candleWidth)-iterationTime).TotalSeconds} seconds");
+                _log.Info($"Waiting for next candle... Est: {(int)(candles.Last().Start.AddMinutes(_candleWidth) - time).TotalSeconds} seconds");
                 return null;
             }
 
