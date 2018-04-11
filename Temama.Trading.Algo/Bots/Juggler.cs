@@ -38,6 +38,9 @@ namespace Temama.Trading.Algo.Bots
             public Juggler Bot { get; set; }
             public int Interval { get; set; }
 
+            public double LastPrice { get; protected set; }
+            public double LastVolume { get; protected set; }
+
             public static int SortByOrder(Step first, Step second)
             {
                 if (first.Order < second.Order)
@@ -141,6 +144,8 @@ namespace Temama.Trading.Algo.Bots
             public override double Test(double inAmount)
             {
                 var ob = Api.GetOrderBook(Base, Fund);
+                LastPrice = ob.Asks[0].Price;
+                LastVolume = ob.Asks[0].Volume;
                 var marketBestPrice = ob.Asks[0].Price;
                 var res = inAmount / marketBestPrice;
                 if (FeeType == FeeType.Percent)
@@ -194,6 +199,8 @@ namespace Temama.Trading.Algo.Bots
             public override double Test(double inAmount)
             {
                 var ob = Api.GetOrderBook(Base, Fund);
+                LastPrice = ob.Bids[0].Price;
+                LastVolume = ob.Bids[0].Volume;
                 var marketBestPrice = ob.Bids[0].Price;
                 var res = inAmount * marketBestPrice;
                 if (FeeType == FeeType.Percent)
@@ -220,6 +227,8 @@ namespace Temama.Trading.Algo.Bots
             {
                 Base = node.Attributes["base"].Value;
                 Wallet = node.Attributes["wallet"].Value;
+                LastPrice = double.MaxValue;
+                LastVolume = double.MaxValue;
             }
 
             public override bool IsReadyToImplement(double inAmount)
