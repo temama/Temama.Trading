@@ -22,6 +22,12 @@ namespace Temama.Trading.Algo.Bots
             Sell
         }
 
+        private enum OrderType
+        {
+            Market,
+            Limit
+        }
+
         private enum FeeType
         {
             Absolute,
@@ -37,6 +43,7 @@ namespace Temama.Trading.Algo.Bots
             public ExchangeApi Api { get; set; }
             public Juggler Bot { get; set; }
             public int Interval { get; set; }
+            public int Timeout { get; set; }
 
             public double LastPrice { get; protected set; }
             public double LastVolume { get; protected set; }
@@ -99,6 +106,13 @@ namespace Temama.Trading.Algo.Bots
                 else
                     step.Interval = 0;
 
+                if (node.Attributes["timeout"] != null)
+                {
+                    step.Timeout = Convert.ToInt32(node.Attributes["timeout"].Value);
+                }
+                else
+                    step.Timeout = 0;
+
                 var api = node.Attributes["api"].Value;
                 step.Api = bot.Apis[api];
 
@@ -110,6 +124,7 @@ namespace Temama.Trading.Algo.Bots
         {
             public string Base { get; set; }
             public string Fund { get; set; }
+            public OrderType OrderType { get; set; } = OrderType.Market;
 
             public override StepType Type => StepType.Buy;
 
@@ -117,6 +132,20 @@ namespace Temama.Trading.Algo.Bots
             {
                 Base = node.Attributes["base"].Value;
                 Fund = node.Attributes["fund"].Value;
+                if (node.Attributes["order"] != null)
+                {
+                    switch (node.Attributes["order"].Value.ToString().ToLower())
+                    {
+                        case "limit":
+                            OrderType = OrderType.Limit;
+                            break;
+                        case "market":
+                            OrderType = OrderType.Market;
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
 
             public override bool IsReadyToImplement(double inAmount)
@@ -127,18 +156,25 @@ namespace Temama.Trading.Algo.Bots
 
             public override StepImplementResult Implement(double inAmount)
             {
-                var f = Api.GetFunds(Base, Fund);
-                if (Bot.BuyByMarketPrice(inAmount))
+                if (OrderType == OrderType.Market)
                 {
-                    var fa = Api.GetFunds(Base, Fund);
-                    return new StepImplementResult()
+                    var f = Api.GetFunds(Base, Fund);
+                    if (Bot.BuyByMarketPrice(inAmount))
                     {
-                        Success = true,
-                        OutputAmount = fa.Values[Base] - f.Values[Base]
-                    };
+                        var fa = Api.GetFunds(Base, Fund);
+                        return new StepImplementResult()
+                        {
+                            Success = true,
+                            OutputAmount = fa.Values[Base] - f.Values[Base]
+                        };
+                    }
+                    else
+                        return new StepImplementResult() { Success = false, OutputAmount = 0 };
                 }
                 else
-                    return new StepImplementResult() { Success = false, OutputAmount = 0 };
+                {
+                    throw new NotImplementedException();
+                }
             }
 
             public override double Test(double inAmount)
@@ -165,6 +201,7 @@ namespace Temama.Trading.Algo.Bots
         {
             public string Base { get; set; }
             public string Fund { get; set; }
+            public OrderType OrderType { get; set; } = OrderType.Market;
 
             public override StepType Type => StepType.Sell;
 
@@ -172,6 +209,20 @@ namespace Temama.Trading.Algo.Bots
             {
                 Base = node.Attributes["base"].Value;
                 Fund = node.Attributes["fund"].Value;
+                if (node.Attributes["order"] != null)
+                {
+                    switch (node.Attributes["order"].Value.ToString().ToLower())
+                    {
+                        case "limit":
+                            OrderType = OrderType.Limit;
+                            break;
+                        case "market":
+                            OrderType = OrderType.Market;
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
 
             public override bool IsReadyToImplement(double inAmount)
