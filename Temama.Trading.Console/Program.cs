@@ -8,10 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Temama.Trading.Algo;
-using Temama.Trading.Core.Algo;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
-using Temama.Trading.Core.Reporting;
 using Temama.Trading.Core.Utils;
 using Temama.Trading.Exchanges;
 
@@ -81,7 +79,8 @@ namespace Temama.Trading.Console
             if (args.Length > 0)
                 configFile = args[0];
 
-            Logger.CleanupLogsDir(3);
+
+            Logger.CleanupLogsDir(7);
             var logHandler = new LoggerConsoleEcho();
             Globals.Logger.Init("Temama.Trading.Console", logHandler);
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionTrapper;

@@ -146,9 +146,9 @@ namespace Temama.Trading.Algo.Bots
             {
                 Base = node.Attributes["base"].Value;
                 Fund = node.Attributes["fund"].Value;
-                if (node.Attributes["order"] != null)
+                if (node.Attributes["orderType"] != null)
                 {
-                    switch (node.Attributes["order"].Value.ToString().ToLower())
+                    switch (node.Attributes["orderType"].Value.ToString().ToLower())
                     {
                         case "limit":
                             OrderType = OrderType.Limit;
@@ -188,7 +188,7 @@ namespace Temama.Trading.Algo.Bots
                 else if (OrderType == OrderType.Limit)
                 {
                     var startTime = DateTime.UtcNow;
-                    var volume = Api.CalculateBuyVolume(LastPrice, LastVolume);
+                    var volume = Api.CalculateBuyVolume(LastPrice, inAmount);
                     var order = Api.PlaceOrder(Base, Fund, "buy", volume, LastPrice);
                     var waiting = true;
                     while (waiting)
@@ -202,7 +202,8 @@ namespace Temama.Trading.Algo.Bots
 
                         if (Timeout != 0 && (DateTime.UtcNow - startTime).TotalSeconds > Timeout)
                         {
-                            throw new Exception($"Timeout on step {ToString()}");
+                            Api.CancellOrder(order);
+                            throw new Exception($"Timeout on step {ToString()}. Order {order} cancelled");
                         }
 
                         Thread.Sleep(OperationCheckDelay);
@@ -248,9 +249,9 @@ namespace Temama.Trading.Algo.Bots
             {
                 Base = node.Attributes["base"].Value;
                 Fund = node.Attributes["fund"].Value;
-                if (node.Attributes["order"] != null)
+                if (node.Attributes["orderType"] != null)
                 {
-                    switch (node.Attributes["order"].Value.ToString().ToLower())
+                    switch (node.Attributes["orderType"].Value.ToString().ToLower())
                     {
                         case "limit":
                             OrderType = OrderType.Limit;
@@ -272,18 +273,49 @@ namespace Temama.Trading.Algo.Bots
 
             public override StepImplementResult Implement(double inAmount)
             {
-                var f = Api.GetFunds(Base, Fund);
-                if (Bot.SellByMarketPrice(inAmount))
+                if (OrderType == OrderType.Market)
                 {
-                    var fa = Api.GetFunds(Base, Fund);
-                    return new StepImplementResult()
+                    var f = Api.GetFunds(Base, Fund);
+                    if (Bot.SellByMarketPrice(inAmount))
                     {
-                        Success = true,
-                        OutputAmount = fa.Values[Fund] - f.Values[Fund]
-                    };
+                        var fa = Api.GetFunds(Base, Fund);
+                        return new StepImplementResult()
+                        {
+                            Success = true,
+                            OutputAmount = fa.Values[Fund] - f.Values[Fund]
+                        };
+                    }
+                    else
+                        return new StepImplementResult() { Success = false, OutputAmount = 0 };
+                }
+                else if (OrderType == OrderType.Limit)
+                {
+                    var startTime = DateTime.UtcNow;
+                    var order = Api.PlaceOrder(Base, Fund, "sell", inAmount, LastPrice);
+                    var waiting = true;
+                    while (waiting)
+                    {
+                        var orders = Api.GetMyOrders(Base, Fund);
+                        if (!orders.Any(o => o.Id == order.Id))
+                        {
+                            waiting = false;
+                            break;
+                        }
+
+                        if (Timeout != 0 && (DateTime.UtcNow - startTime).TotalSeconds > Timeout)
+                        {
+                            Api.CancellOrder(order);
+                            throw new Exception($"Timeout on step {ToString()}. Order {order} cancelled");
+                        }
+
+                        Thread.Sleep(OperationCheckDelay);
+                    }
+                    return new StepImplementResult { Success = true, OutputAmount = SubtractFee(order.Volume * order.Price) };
                 }
                 else
-                    return new StepImplementResult() { Success = false, OutputAmount = 0 };
+                {
+                    throw new NotImplementedException();
+                }
             }
 
             public override double Test(double inAmount)
