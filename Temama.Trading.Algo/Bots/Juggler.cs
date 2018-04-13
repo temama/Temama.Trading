@@ -15,6 +15,8 @@ namespace Temama.Trading.Algo.Bots
 {
     public class Juggler : TradingBot
     {
+        public static int OperationCheckDelay = 2000;
+
         private enum StepType
         {
             Transfer,
@@ -62,6 +64,18 @@ namespace Temama.Trading.Algo.Bots
             public abstract StepImplementResult Implement(double inAmount);
 
             public abstract double Test(double inAmount);
+
+            public abstract double DryRunLast(double inAmount);
+
+            public virtual double SubtractFee(double input)
+            {
+                var res = input;
+                if (FeeType == FeeType.Percent)
+                    res = res - res * Fee;
+                else
+                    res = res - Fee;
+                return res;
+            }
 
             public static Step Parse(XmlNode node, Juggler bot)
             {
@@ -171,6 +185,30 @@ namespace Temama.Trading.Algo.Bots
                     else
                         return new StepImplementResult() { Success = false, OutputAmount = 0 };
                 }
+                else if (OrderType == OrderType.Limit)
+                {
+                    var startTime = DateTime.UtcNow;
+                    var volume = Api.CalculateBuyVolume(LastPrice, LastVolume);
+                    var order = Api.PlaceOrder(Base, Fund, "buy", volume, LastPrice);
+                    var waiting = true;
+                    while (waiting)
+                    {
+                        var orders = Api.GetMyOrders(Base, Fund);
+                        if (!orders.Any(o => o.Id == order.Id))
+                        {
+                            waiting = false;
+                            break;
+                        }
+
+                        if (Timeout != 0 && (DateTime.UtcNow - startTime).TotalSeconds > Timeout)
+                        {
+                            throw new Exception($"Timeout on step {ToString()}");
+                        }
+
+                        Thread.Sleep(OperationCheckDelay);
+                    }
+                    return new StepImplementResult { Success = true, OutputAmount = SubtractFee(volume) };
+                }
                 else
                 {
                     throw new NotImplementedException();
@@ -184,11 +222,12 @@ namespace Temama.Trading.Algo.Bots
                 LastVolume = ob.Asks[0].Volume;
                 var marketBestPrice = ob.Asks[0].Price;
                 var res = inAmount / marketBestPrice;
-                if (FeeType == FeeType.Percent)
-                    res = res - res * Fee;
-                else
-                    res = res - Fee;
-                return res;
+                return SubtractFee(res);
+            }
+
+            public override double DryRunLast(double inAmount)
+            {
+                return SubtractFee(Math.Min(inAmount, LastVolume) / LastPrice);
             }
 
             public override string ToString()
@@ -254,11 +293,12 @@ namespace Temama.Trading.Algo.Bots
                 LastVolume = ob.Bids[0].Volume;
                 var marketBestPrice = ob.Bids[0].Price;
                 var res = inAmount * marketBestPrice;
-                if (FeeType == FeeType.Percent)
-                    res = res - res * Fee;
-                else
-                    res = res - Fee;
-                return res;
+                return SubtractFee(res);
+            }
+
+            public override double DryRunLast(double inAmount)
+            {
+                return SubtractFee(Math.Min(inAmount, LastVolume) * LastPrice);
             }
 
             public override string ToString()
@@ -309,6 +349,11 @@ namespace Temama.Trading.Algo.Bots
                 return rest;
             }
 
+            public override double DryRunLast(double inAmount)
+            {
+                return SubtractFee(inAmount);
+            }
+
             public override string ToString()
             {
                 return $"{Api.Name()} {Type} {Base}";
@@ -330,7 +375,7 @@ namespace Temama.Trading.Algo.Bots
         public Dictionary<string, ExchangeApi> Apis { get { return _apis; } }
         public bool MonitorMode { get { return _monitorMode; } }
 
-        private double _profitToPlay = 5;
+        private double _profitToPlay = 0.05;
         private Dictionary<string, ExchangeApi> _apis = new Dictionary<string, ExchangeApi>();
         private List<Step> _steps = new List<Step>();
         private bool _inGame = false;
@@ -341,6 +386,7 @@ namespace Temama.Trading.Algo.Bots
         private double _beforeRunFiat = 0;
         private double _currentAmountToOperate = 0;
         private double _operatingAmount = 0.0;
+        private bool _useRecomendedFunds = false;
 
         public Juggler(XmlNode config, ILogHandler logHandler) : base(config, logHandler)
         {
@@ -362,6 +408,7 @@ namespace Temama.Trading.Algo.Bots
 
             // Load params
             _monitorMode = Convert.ToBoolean(config.GetConfigValue("MonitorMode", true, "false"));
+            _useRecomendedFunds = Convert.ToBoolean(config.GetConfigValue("UseRecomendedFunds", true, "false"));
             _profitToPlay = Convert.ToDouble(config.GetConfigValue("ProfitToPlay"), CultureInfo.InvariantCulture) * 0.01;
             _operatingAmount = Convert.ToDouble(config.GetConfigValue("OperatingAmount"), CultureInfo.InvariantCulture);
             _veryBase = config.GetConfigValue("VeryBase").ToUpper();
@@ -395,61 +442,107 @@ namespace Temama.Trading.Algo.Bots
                 _log.Info(msg);
                 if (res.Profit >= _profitToPlay)
                 {
-                    NotificationManager.SendImportant(WhoAmI, msg);
-                    var availableFunds = GetAvailableFundsToStart();
-                    if (availableFunds >= _operatingAmount)
-                    {
-                        _currentAmountToOperate = _operatingAmount;
-                        if (!_monitorMode)
-                        {
-                            _log.Important($"Starting scenario... Expected profit={(res.Profit * 100).ToString("0.##")}%");
-                            _inGame = true;
-                            _currentStep = 0;
-                            SetupStep(_steps[0]);
-                            _beforeRunFiat = _steps[0].Api.GetFunds(_veryBase, _veryBase).Values[_veryBase];
-                        }
-                        else
-                        {
-                            _log.Important($"Monitor mode... Found profit={(res.Profit * 100).ToString("0.##")}; With ExpectedRes={res.ExpectedRes.ToString("0.##")}");
-                        }
-                    }
+                    TryToStartGame(res);
                 }
             }
 
             if (_inGame)
             {
-                var step = _steps[_currentStep];
-                _log.Info($"{DisplayName} Step: {step}");
-                if (step.IsReadyToImplement(_currentAmountToOperate))
+                try
                 {
-                    _log.Info($"{DisplayName} Step is Ready");
-                    var res = step.Implement(_currentAmountToOperate);
-                    if (res.Success)
-                    {
-                        _log.Important($"{DisplayName} Step DONE: {step}");
-                        _currentAmountToOperate = res.OutputAmount;
-                        _currentStep++;
+                    GameIteration();
+                }
+                catch (Exception ex)
+                {
+                    _inGame = false;
+                    _currentStep = 0;
+                    SetupStep(_steps[0]);
 
-                        if (_currentStep >= _steps.Count)
-                        {
-                            _inGame = false;
-                            _currentStep = 0;
-                            SetupStep(_steps[0]);
-                            var afterRun = _steps[0].Api.GetFunds(_veryBase,_veryBase).Values[_veryBase];
-                            _log.Important($"Scenario completted. Profit={afterRun - _beforeRunFiat}{_veryBase}");
-                        }
-                        else
-                        {
-                            step = _steps[_currentStep];
-                            SetupStep(step);
-                        }
+                    _log.Critical("Game step failed with exception.. stopping game");
+
+                    throw ex;
+                }
+            }
+        }
+
+        private void GameIteration()
+        {
+            var step = _steps[_currentStep];
+            _log.Info($"{DisplayName} Step: {step}");
+            if (step.IsReadyToImplement(_currentAmountToOperate))
+            {
+                _log.Info($"{DisplayName} Step is Ready");
+                var res = step.Implement(_currentAmountToOperate);
+                if (res.Success)
+                {
+                    _log.Important($"{DisplayName} Step DONE: {step}");
+                    _currentAmountToOperate = res.OutputAmount;
+                    _currentStep++;
+
+                    if (_currentStep >= _steps.Count)
+                    {
+                        _inGame = false;
+                        _currentStep = 0;
+                        SetupStep(_steps[0]);
+                        var afterRun = _steps[0].Api.GetFunds(_veryBase, _veryBase).Values[_veryBase];
+                        _log.Important($"Scenario completted. Profit={afterRun - _beforeRunFiat}{_veryBase}");
                     }
                     else
                     {
-                        _log.Error($"Step implementation failed: {step}");
+                        step = _steps[_currentStep];
+                        SetupStep(step);
                     }
                 }
+                else
+                {
+                    _log.Error($"Step implementation failed: {step}");
+                }
             }
+        }
+
+        private void TryToStartGame(ScenarioResult res)
+        {
+            var msg = $"{DisplayName}: Scenario profit={(res.Profit * 100).ToString("0.##")}%; ExpectedRes={res.ExpectedRes.ToString("0.##")}/{_operatingAmount}{_veryBase}";
+            NotificationManager.SendImportant(WhoAmI, msg);
+            var availableFunds = GetAvailableFundsToStart();
+            var amountToStart = _operatingAmount;
+
+            if (_useRecomendedFunds)
+            {
+                amountToStart = CalculateRecomendedAmountToStart(res);
+            }
+
+            if (availableFunds >= amountToStart)
+            {
+                _currentAmountToOperate = _operatingAmount;
+                if (!_monitorMode)
+                {
+                    _log.Important($"Starting scenario... Expected profit={(res.Profit * 100).ToString("0.##")}%");
+                    _inGame = true;
+                    _currentStep = 0;
+                    SetupStep(_steps[0]);
+                    _beforeRunFiat = _steps[0].Api.GetFunds(_veryBase, _veryBase).Values[_veryBase];
+                }
+                else
+                {
+                    _log.Important($"Monitor mode... Found profit={(res.Profit * 100).ToString("0.##")}; With ExpectedRes={res.ExpectedRes.ToString("0.##")}");
+                }
+            }
+            else
+            {
+                _log.Warning($"Not enough funds to start game");
+            }
+        }
+
+        private double CalculateRecomendedAmountToStart(ScenarioResult res)
+        {
+            var op = _operatingAmount;
+            for (int i = 0; i < _steps.Count; i++)
+            {
+                op = _steps[i].DryRunLast(op);
+            }
+
+            return op - op * res.Profit;
         }
 
         private void SetupStep(Step step)
