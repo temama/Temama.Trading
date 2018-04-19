@@ -189,6 +189,7 @@ namespace Temama.Trading.Algo.Bots
                 {
                     var startTime = DateTime.UtcNow;
                     var volume = Api.CalculateBuyVolume(LastPrice, inAmount);
+                    Bot._log.Info($"Placing Buy order P:{LastPrice}; V:{volume}");
                     var order = Api.PlaceOrder(Base, Fund, "buy", volume, LastPrice);
                     var waiting = true;
                     while (waiting)
@@ -291,7 +292,9 @@ namespace Temama.Trading.Algo.Bots
                 else if (OrderType == OrderType.Limit)
                 {
                     var startTime = DateTime.UtcNow;
-                    var order = Api.PlaceOrder(Base, Fund, "sell", inAmount, LastPrice);
+                    var volume = Api.GetRoundedSellVolume(inAmount);
+                    Bot._log.Info($"Placing Sell order P:{LastPrice}; V:{volume}");
+                    var order = Api.PlaceOrder(Base, Fund, "sell", volume, LastPrice);
                     var waiting = true;
                     while (waiting)
                     {
@@ -474,6 +477,7 @@ namespace Temama.Trading.Algo.Bots
                 _log.Info(msg);
                 if (res.Profit >= _profitToPlay)
                 {
+                    PrintLastTest();
                     TryToStartGame(res);
                 }
             }
@@ -496,7 +500,7 @@ namespace Temama.Trading.Algo.Bots
                 }
             }
         }
-
+        
         private void GameIteration()
         {
             var step = _steps[_currentStep];
@@ -624,6 +628,19 @@ namespace Temama.Trading.Algo.Bots
                 return 0;
 
             return Math.Min(f.Values[_veryBase], _maxFundsToOperate);
+        }
+
+        private void PrintLastTest()
+        {
+            _log.Info("Steps test values:");
+            for (int i = 0; i < _steps.Count; i++)
+            {
+                var step = _steps[i];
+                var msg = step.ToString();
+                if (step.Type != StepType.Transfer)
+                    msg += $" => P:{step.LastPrice};V:{step.LastVolume}";
+                _log.Info(msg);
+            }
         }
 
         protected override void UpdateIterationStats()

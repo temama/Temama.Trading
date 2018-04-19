@@ -22,7 +22,7 @@ namespace Temama.Trading.Algo.Bots
 
         private bool _hypeMode = false;
         private Dictionary<string, double> _prev = null;
-        private Dictionary<string, int> _raiseMap = null;
+        private Dictionary<string, double> _raiseMap = null;
 
         public Hyper(XmlNode config, ILogHandler logHandler) : base(config, logHandler)
         {
@@ -45,7 +45,7 @@ namespace Temama.Trading.Algo.Bots
             {
                 // Very first iteration
                 _prev = latest;
-                _raiseMap = new Dictionary<string, int>();
+                _raiseMap = new Dictionary<string, double>();
                 foreach (var kv in latest)
                 {
                     _raiseMap.Add(kv.Key, 0);
@@ -62,9 +62,11 @@ namespace Temama.Trading.Algo.Bots
                     _raiseMap[kv.Key] = -1;
             }
 
+            _log.Info($"Latest stats: {GetDataRepresentation(_raiseMap)}");
+
             if (_hypeMode)
             {
-                var fallingCount = _raiseMap.Count(kv=> kv.Value == -1);
+                var fallingCount = _raiseMap.Count(kv=> kv.Value < 0);
 
                 // End of hype
                 if (fallingCount >= _stopCoins)
@@ -74,7 +76,7 @@ namespace Temama.Trading.Algo.Bots
             }
             else
             {
-                var raisingCount = latest.Count(kv => kv.Value == 1);
+                var raisingCount = _raiseMap.Count(kv => kv.Value > 0);
                 if (raisingCount >= _startCoins)
                 {
                     OnHypeStarted(latest);
@@ -137,7 +139,7 @@ namespace Temama.Trading.Algo.Bots
                 $"<font color='{(kv.Value > 0 ? "green" : "red")}'>{kv.Key} {RaiseRepresentaion(kv.Value)}</font>")) + "]";
         }
 
-        private string RaiseRepresentaion(int val)
+        private string RaiseRepresentaion(double val)
         {
             return val > 0 ? "▲" : (val < 0 ? "▼" : "-");
         }
