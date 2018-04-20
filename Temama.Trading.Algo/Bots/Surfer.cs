@@ -165,7 +165,6 @@ namespace Temama.Trading.Algo.Bots
         private Signal CheckSignals(DateTime iterationTime)
         {
             var time = iterationTime.ToUniversalTime();
-            // TODO: Convert everything to UTC
             if (!_analitics.HasHistoricalDataStartingFrom(_base, _fund,
                 time.AddMinutes(-1 * _minSignalCandlesCount * _candleWidth), true))
             {
@@ -188,17 +187,14 @@ namespace Temama.Trading.Algo.Bots
                 _log.Info($"Waiting for next candle... Est: {(int)(candles.Last().Start.AddMinutes(_candleWidth) - time).TotalSeconds} seconds");
                 return null;
             }
+            
+            candles.RemoveAll(c => !c.Completed);
 
-            // !!THIS IS INCORRECT!! Not always it's last
-            // Removing last (just opened) candle
-            candles.RemoveAt(candles.Count - 1);
             if (candles.Count == 0)
             {
                 return null;
             }
-
-            _log.Info("Verifying signals...");
-
+            
             foreach (var signal in _signals)
             {
                 if (signal.Verify(candles))

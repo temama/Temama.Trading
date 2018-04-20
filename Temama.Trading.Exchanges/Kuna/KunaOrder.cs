@@ -20,7 +20,7 @@ namespace Temama.Trading.Exchanges.Kuna
                 Side = (json["side"] as JValue).Value.ToString(),
                 Price = Convert.ToDouble((json["price"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
                 Volume = Convert.ToDouble((json["volume"] as JValue).Value.ToString(), CultureInfo.InvariantCulture),
-                CreatedAt = DateTime.Parse((json["created_at"] as JValue).Value.ToString())
+                CreatedAt = DateTime.Parse((json["created_at"] as JValue).Value.ToString()).ToUniversalTime()
             };
             return order;
         }

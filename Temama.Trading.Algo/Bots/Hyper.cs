@@ -107,8 +107,8 @@ namespace Temama.Trading.Algo.Bots
 
         private void OnHypeStarted(Dictionary<string, double> stats)
         {
-            var msg = $"HYPE STARTED with values: {GetDataRepresentation(stats)}\r\n{GetRaiseMapRepresentation()}";
             _hypeMode = true;
+            var msg = $"HYPE STARTED with values: {GetDataRepresentation(stats)}\r\n{GetRaiseMapRepresentation()}";
             _log.Important(msg);
             NotificationManager.SendImportant(WhoAmI, msg);
 
@@ -121,10 +121,10 @@ namespace Temama.Trading.Algo.Bots
 
         private void OnHypeEnded(Dictionary<string, double> stats)
         {
-            var msg = $"HYPE Ended with values: {GetDataRepresentation(stats)}\r\n{GetRaiseMapRepresentation()}";
             _hypeMode = false;
-            _log.Warning(msg);
-            NotificationManager.SendWarning(WhoAmI, msg);
+            var msg = $"Hype Ended with values: {GetDataRepresentation(stats)}\r\n{GetRaiseMapRepresentation()}";
+            _log.Info(msg);
+            NotificationManager.SendInfo(WhoAmI, msg);
 
             if (_monitorMode)
             {
