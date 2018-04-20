@@ -189,16 +189,25 @@ namespace Temama.Trading.Algo.Bots
                 {
                     var startTime = DateTime.UtcNow;
                     var volume = Api.CalculateBuyVolume(LastPrice, inAmount);
-                    Bot._log.Info($"Placing Buy order P:{LastPrice}; V:{volume}");
+                    var msg = $"Placing limit order {ToString()} => P:{LastPrice}; V:{volume}";
+                    Bot._log.Important(msg);
+                    NotificationManager.SendImportant(Bot.WhoAmI, msg);
                     var order = Api.PlaceOrder(Base, Fund, "buy", volume, LastPrice);
                     var waiting = true;
                     while (waiting)
                     {
-                        var orders = Api.GetMyOrders(Base, Fund);
-                        if (!orders.Any(o => o.Id == order.Id))
+                        try
                         {
-                            waiting = false;
-                            break;
+                            var orders = Api.GetMyOrders(Base, Fund);
+                            if (!orders.Any(o => o.Id == order.Id))
+                            {
+                                waiting = false;
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Bot._log.Error("Error while checking active orders status: " + ex.Message);
                         }
 
                         if (Timeout != 0 && (DateTime.UtcNow - startTime).TotalSeconds > Timeout)
@@ -293,16 +302,25 @@ namespace Temama.Trading.Algo.Bots
                 {
                     var startTime = DateTime.UtcNow;
                     var volume = Api.GetRoundedSellVolume(inAmount);
-                    Bot._log.Info($"Placing Sell order P:{LastPrice}; V:{volume}");
+                    var msg = $"Placing limit order {ToString()} => P:{LastPrice}; V:{volume}";
+                    Bot._log.Important(msg);
+                    NotificationManager.SendImportant(Bot.WhoAmI, msg);
                     var order = Api.PlaceOrder(Base, Fund, "sell", volume, LastPrice);
                     var waiting = true;
                     while (waiting)
                     {
-                        var orders = Api.GetMyOrders(Base, Fund);
-                        if (!orders.Any(o => o.Id == order.Id))
+                        try
                         {
-                            waiting = false;
-                            break;
+                            var orders = Api.GetMyOrders(Base, Fund);
+                            if (!orders.Any(o => o.Id == order.Id))
+                            {
+                                waiting = false;
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Bot._log.Error("Error while checking active orders status: " + ex.Message);
                         }
 
                         if (Timeout != 0 && (DateTime.UtcNow - startTime).TotalSeconds > Timeout)
@@ -490,13 +508,15 @@ namespace Temama.Trading.Algo.Bots
                 }
                 catch (Exception ex)
                 {
+                    _log.Critical($"Game step failed with exception.. stopping game:\r\n {ex.Message}");
+                    var msg = $"Below scenario failed:\r\n{LastTestRepresentation()}... on step: {_steps[_currentStep]}";
+                    _log.Warning(msg);
+                    NotificationManager.SendWarning(WhoAmI, msg);
+
                     _inGame = false;
                     _currentStep = 0;
                     SetupStep(_steps[0]);
 
-                    _log.Critical("Game step failed with exception.. stopping game");
-
-                    throw ex;
                 }
             }
         }
@@ -633,14 +653,21 @@ namespace Temama.Trading.Algo.Bots
         private void PrintLastTest()
         {
             _log.Info("Steps test values:");
+            _log.Info(LastTestRepresentation());
+        }
+
+        private string LastTestRepresentation()
+        {
+            var res = new StringBuilder();
             for (int i = 0; i < _steps.Count; i++)
             {
                 var step = _steps[i];
                 var msg = step.ToString();
                 if (step.Type != StepType.Transfer)
                     msg += $" => P:{step.LastPrice};V:{step.LastVolume}";
-                _log.Info(msg);
+                res.AppendLine(msg);
             }
+            return res.ToString();
         }
 
         protected override void UpdateIterationStats()
