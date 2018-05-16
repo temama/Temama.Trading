@@ -37,9 +37,7 @@ namespace Temama.Trading.Algo.Bots
             if (allowedBase > _minBaseToTrade)
             {
                 _log.Info("Ranger: Can place sell order...");
-                var order = _api.PlaceOrder(_base, _fund, "sell", 
-                    _api.GetRoundedSellVolume(GetAlmolstAll(allowedBase)), _priceToSell);
-                NotifyOrderPlaced(order);
+                PlaceLimitOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(GetAlmolstAll(allowedBase)), _priceToSell);
             }
 
             if (allowedFund > _minFundToTrade)
@@ -48,8 +46,7 @@ namespace Temama.Trading.Algo.Bots
                 if (amount > _minBaseToTrade)
                 {
                     _log.Info("Ranger: Can place buy order...");
-                    var order = _api.PlaceOrder(_base, _fund, "buy", amount, _priceToBuy);
-                    NotifyOrderPlaced(order);
+                    PlaceLimitOrder(_base, _fund, "buy", amount, _priceToBuy);
                 }
             }
         }

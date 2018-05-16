@@ -191,8 +191,8 @@ namespace Temama.Trading.Algo.Bots
                     var volume = Api.CalculateBuyVolume(LastPrice, inAmount);
                     var msg = $"Placing limit order {ToString()} => P:{LastPrice}; V:{volume}";
                     Bot._log.Important(msg);
-                    NotificationManager.SendImportant(Bot.WhoAmI, msg);
-                    var order = Api.PlaceOrder(Base, Fund, "buy", volume, LastPrice);
+                    //NotificationManager.SendImportant(Bot.WhoAmI, msg);
+                    var order = Bot.PlaceLimitOrder(Base, Fund, "buy", volume, LastPrice, Api);
                     var waiting = true;
                     while (waiting)
                     {
@@ -304,8 +304,8 @@ namespace Temama.Trading.Algo.Bots
                     var volume = Api.GetRoundedSellVolume(inAmount);
                     var msg = $"Placing limit order {ToString()} => P:{LastPrice}; V:{volume}";
                     Bot._log.Important(msg);
-                    NotificationManager.SendImportant(Bot.WhoAmI, msg);
-                    var order = Api.PlaceOrder(Base, Fund, "sell", volume, LastPrice);
+                    //NotificationManager.SendImportant(Bot.WhoAmI, msg);
+                    var order = Bot.PlaceLimitOrder(Base, Fund, "sell", volume, LastPrice, Api);
                     var waiting = true;
                     while (waiting)
                     {

@@ -332,6 +332,25 @@ namespace Temama.Trading.Core.Algo
             return false;
         }
 
+        protected virtual Order PlaceLimitOrder(string baseCur, string fundCur, string side, double volume, double price, ExchangeApi api = null)
+        {
+            var exchange = api ?? _api;
+            var order = exchange.PlaceOrder(baseCur, fundCur, side, volume, price);
+            NotifyOrderPlaced(order);
+
+            // TODO: Add to active orders (DB)
+
+            return order;
+        }
+
+        protected virtual void CancelOrder(Order order, ExchangeApi api = null)
+        {
+            var exchange = api ?? _api;
+            exchange.CancellOrder(order);
+            NotifyOrderCancel(order);
+            // TODO: Remove from active orders (DB)
+        }
+
         /// <summary>
         /// Not to over exceed available amout during orders placement (after rounding at API level)
         /// </summary>

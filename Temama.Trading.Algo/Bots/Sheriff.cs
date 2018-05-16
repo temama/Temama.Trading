@@ -114,18 +114,15 @@ namespace Temama.Trading.Algo.Bots
             if (splitAmount && amount > _minFundToTrade * 2)
             {
                 amount = amount / 2;
-                var order = _api.PlaceOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyNearPercent, amount),
+                PlaceLimitOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyNearPercent, amount),
                     last - last * _buyNearPercent);
-                NotifyOrderPlaced(order);
-                order = _api.PlaceOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyFarPercent, amount),
+                PlaceLimitOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyFarPercent, amount),
                     last - last * _buyFarPercent);
-                NotifyOrderPlaced(order);
             }
             else
             {
-                var order = _api.PlaceOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyNearPercent, amount),
+                PlaceLimitOrder(_base, _fund, "buy", _api.CalculateBuyVolume(last - last * _buyNearPercent, amount),
                     last - last * _buyNearPercent);
-                NotifyOrderPlaced(order);
             }
         }
 
@@ -143,18 +140,12 @@ namespace Temama.Trading.Algo.Bots
             if (splitAmount && amount > _minBaseToTrade * 2)
             {
                 amount = amount / 2;
-                var order = _api.PlaceOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(amount),
-                    last + last * _buyNearPercent);
-                NotifyOrderPlaced(order);
-                order = _api.PlaceOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(amount),
-                    last + last * _buyFarPercent);
-                NotifyOrderPlaced(order);
+                PlaceLimitOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(amount), last + last * _buyNearPercent);
+                PlaceLimitOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(amount), last + last * _buyFarPercent);
             }
             else
             {
-                var order = _api.PlaceOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(amount),
-                    last + last * _buyNearPercent);
-                NotifyOrderPlaced(order);
+                PlaceLimitOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(amount), last + last * _buyNearPercent);
             }
         }        
 

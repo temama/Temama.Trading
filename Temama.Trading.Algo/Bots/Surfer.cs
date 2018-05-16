@@ -87,8 +87,7 @@ namespace Temama.Trading.Algo.Bots
                             var price = signal.LastPriceExpectation > 0 ? 
                                 signal.LastPriceExpectation : _lastPrice + _lastPrice * _takeProfit;
                             
-                            var order = _api.PlaceOrder(_base, _fund, "sell", amount, price);
-                            NotifyOrderPlaced(order);
+                            PlaceLimitOrder(_base, _fund, "sell", amount, price);
                         }
                         else
                             _log.Warning($"Not enough {_base} to place sell order");
