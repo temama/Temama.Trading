@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Xml;
 using Temama.Trading.Core.Algo;
+using Temama.Trading.Core.Common;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
 using Temama.Trading.Core.Utils;
@@ -14,15 +15,28 @@ namespace Temama.Trading.Algo.Bots
 {
     public class Hyper : TradingBot
     {
-        private static string _baseUrl = "https://api.coinmarketcap.com/v1/ticker/?limit=";
-        private int _topCoins = 10;
-        private int _startCoins = 7;
-        private int _stopCoins = 5;
+        private class ToDo
+        {
+
+            public static ToDo Parse(Hyper bot, XmlNode node)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private Dictionary<Pair, Queue<double>> _prices = new Dictionary<Pair, Queue<double>>();
+        private List<ToDo> _onHypeStart = new List<ToDo>();
+        private List<ToDo> _onHypeEnd = new List<ToDo>();
+
         private bool _monitorMode = true;
+        private int _iterationsToCheck = 10;
+
+        // Stubbing this so far
+        private int _startCoins { get { return _prices.Count; } }
+        private int _stopCoins { get { return 1; } }
 
         private bool _hypeMode = false;
-        private Dictionary<string, double> _prev = null;
-        private Dictionary<string, double> _raiseMap = null;
+
 
         public Hyper(XmlNode config, ILogHandler logHandler) : base(config, logHandler)
         {
@@ -30,87 +44,89 @@ namespace Temama.Trading.Algo.Bots
 
         protected override void InitAlgo(XmlNode config)
         {
-            _topCoins = Convert.ToInt32(config.GetConfigValue("TopCoins", true, "10"));
-            _startCoins = Convert.ToInt32(config.GetConfigValue("StartCoins", true, "7"));
-            _stopCoins = Convert.ToInt32(config.GetConfigValue("StopCoins", true, "5"));
-            _monitorMode = Convert.ToBoolean(config.GetConfigValue("MonitorMode", true, "true"));
+            _prices.Clear();
+            _onHypeStart.Clear();
+            _onHypeEnd.Clear();
+
+            var checkPairs = config.SelectNodes("CheckPairs/Pair");
+            foreach (XmlNode node in checkPairs)
+            {
+                _prices.Add(Pair.Parse(node), new Queue<double>());
+            }
+
+            if (_prices.Count == 0)
+                throw new Exception("Should be provided at least 1 pair to chek");
+
+            var toDoNodes = config.SelectNodes("OnHypeStarts/ToDo");
+            foreach (XmlNode node in toDoNodes)
+            {
+                _onHypeStart.Add(ToDo.Parse(this, node));
+            }
+
+            toDoNodes = config.SelectNodes("OnHypeEnds/ToDo");
+            foreach (XmlNode node in toDoNodes)
+            {
+                _onHypeEnd.Add(ToDo.Parse(this, node));
+            }
+
+            _iterationsToCheck = Convert.ToInt32(config.GetConfigValue("IterationsToCheck", true, "10"));
+            _monitorMode = Convert.ToBoolean(config.GetConfigValue("MonitorMode", true, "false"));
         }
 
         protected override void TradingIteration(DateTime dateTime)
         {
-            var latest = GetLatest();
-            _log.Info($"Latest stats: {GetDataRepresentation(latest)}");
-
-            if (_prev == null)
+            foreach (var p in _prices.Keys)
             {
-                // Very first iteration
-                _prev = latest;
-                _raiseMap = new Dictionary<string, double>();
-                foreach (var kv in latest)
-                {
-                    _raiseMap.Add(kv.Key, 0);
-                }
+                var price = _api.GetLastPrice(p.Base, p.Fund);
+                _prices[p].Enqueue(price);
+            }
 
+            if (_prices.First().Value.Count < _iterationsToCheck)
+            {
+                _log.Info("Collecting prices info...");
                 return;
             }
 
-            foreach (var kv in latest)
+            var stats = new Dictionary<string, double>();
+            foreach (var p in _prices)
             {
-                if (kv.Value > _prev[kv.Key])
-                    _raiseMap[kv.Key] = 1;
-                else if (kv.Value < _prev[kv.Key])
-                    _raiseMap[kv.Key] = -1;
+                var diff = p.Value.Last() - p.Value.First();
+                stats.Add(p.Key.ToString(), diff);
             }
-
-            _log.Info($"Latest stats: {GetDataRepresentation(_raiseMap)}");
-
+            
+            _log.Info($"Latest stats: {GetDataRepresentation(stats)}");
+            
             if (_hypeMode)
             {
-                var fallingCount = _raiseMap.Count(kv=> kv.Value < 0);
+                var fallingCount = stats.Count(kv=> kv.Value < 0);
 
                 // End of hype
                 if (fallingCount >= _stopCoins)
                 {  
-                    OnHypeEnded(latest);
+                    OnHypeEnded(stats);
                 }
             }
             else
             {
-                var raisingCount = _raiseMap.Count(kv => kv.Value > 0);
+                var raisingCount = stats.Count(kv => kv.Value > 0);
                 if (raisingCount >= _startCoins)
                 {
-                    OnHypeStarted(latest);
+                    OnHypeStarted(stats);
                 }
             }
-
-            _prev = latest;
-        }
-
-        private string GetDataRepresentation(Dictionary<string, double> data)
-        {
-            return "[" + string.Join("; ", data.Select(kv => $"{kv.Key}:{NumStr(kv.Value)}")) + "]";
-        }
-
-        private Dictionary<string, double> GetLatest()
-        {
-            var res = new Dictionary<string, double>();
-            var response = WebApi.Query(_baseUrl + _topCoins);
-            var json = JArray.Parse(response);
-            foreach (JObject o in json)
+            
+            foreach (var p in _prices)
             {
-                var id = (o["id"] as JValue).Value.ToString();
-                var change = Convert.ToDouble((o["percent_change_1h"] as JValue).Value.ToString(), CultureInfo.InvariantCulture);
-                res[id] = change;
+                p.Value.Dequeue();
             }
-            return res;
         }
-
+                
         private void OnHypeStarted(Dictionary<string, double> stats)
         {
             _hypeMode = true;
-            var msg = $"HYPE STARTED with values: {GetDataRepresentation(stats)}\r\n{GetRaiseMapRepresentation()}";
-            _log.Important(msg);
-            NotificationManager.SendImportant(WhoAmI, msg);
+            var msg = $"HYPE STARTED with values: ";
+            _log.Important(msg + GetDataRepresentation(stats));
+            NotificationManager.SendImportant(WhoAmI, msg + GetRaiseMapRepresentation(stats));
 
             if (_monitorMode)
             {
@@ -122,9 +138,9 @@ namespace Temama.Trading.Algo.Bots
         private void OnHypeEnded(Dictionary<string, double> stats)
         {
             _hypeMode = false;
-            var msg = $"Hype Ended with values: {GetDataRepresentation(stats)}\r\n{GetRaiseMapRepresentation()}";
-            _log.Info(msg);
-            NotificationManager.SendInfo(WhoAmI, msg);
+            var msg = $"HYPE ENDED with values: ";
+            _log.Info(msg + GetDataRepresentation(stats));
+            NotificationManager.SendInfo(WhoAmI, msg + GetRaiseMapRepresentation(stats));
 
             if (_monitorMode)
             {
@@ -133,10 +149,15 @@ namespace Temama.Trading.Algo.Bots
             }
         }
 
-        private string GetRaiseMapRepresentation()
+        private string GetDataRepresentation(Dictionary<string, double> data)
         {
-            return "[" + string.Join("; ", _raiseMap.Select(kv =>
-                $"<font color='{(kv.Value > 0 ? "green" : "red")}'>{kv.Key} {RaiseRepresentaion(kv.Value)}</font>")) + "]";
+            return "[" + string.Join("; ", data.Select(kv => $"{kv.Key} {RaiseRepresentaion(kv.Value)} {NumStr(kv.Value)}")) + "]";
+        }
+
+        private string GetRaiseMapRepresentation(Dictionary<string, double> data)
+        {
+            return "[" + string.Join("; ", data.Select(kv =>
+                $"<font color='{(kv.Value > 0 ? "green" : "red")}'>{kv.Key} {RaiseRepresentaion(kv.Value)} {NumStr(kv.Value)}</font>")) + "]";
         }
 
         private string RaiseRepresentaion(double val)
@@ -146,13 +167,12 @@ namespace Temama.Trading.Algo.Bots
 
         public override void Emulate(DateTime start, DateTime end)
         {
-            // Coinmarketcap is not supported historical data so far
             throw new Exception("Hyper emulation is not supported");
         }
 
         protected override string WhoAmIValue()
         {
-            return "Hyper" + (_monitorMode ? " (monitor)" : "on many");
+            return base.WhoAmIValue() + (_monitorMode ? " (monitor)" : "");
         }
 
         protected override void PrintSummary()
