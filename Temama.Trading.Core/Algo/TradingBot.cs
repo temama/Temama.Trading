@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Temama.Trading.Core.Cache;
 using Temama.Trading.Core.Exchange;
 using Temama.Trading.Core.Logger;
 using Temama.Trading.Core.Notifications;
@@ -58,6 +59,8 @@ namespace Temama.Trading.Core.Algo
         protected int _orderPlaced = 0;
         protected int _orderCancelled = 0;
         protected int _marketTradesDone = 0;
+
+        protected OrdersCache _ordersCache;
 
         public string WhoAmI
         {
@@ -116,6 +119,9 @@ namespace Temama.Trading.Core.Algo
             _pricePersistInterval = Convert.ToInt32(config.GetConfigValue("PricePersistInterval", true, "0"));
 
             _pair = _base + "/" + _fund;
+
+            var cacheMode = config.GetConfigValue("OrdersCacheMode", true, "Memory");
+            _ordersCache = new OrdersCache(OrdersCache.ParseMode(cacheMode));
 
             InitAlgo(config);
         }
@@ -223,6 +229,7 @@ namespace Temama.Trading.Core.Algo
             try
             {
                 PrintSummary();
+                _ordersCache.Sync(_openOrders);
 
                 if (_stopLossEnabled)
                 {
@@ -231,8 +238,7 @@ namespace Temama.Trading.Core.Algo
                         if (IsStopLoss(order, _lastPrice))
                         {
                             _log.Warning("Cancelling order by stop loss:");
-                            _api.CancellOrder(order);
-                            NotifyOrderCancel(order);
+                            CancelOrder(order);
                             SellByMarketPrice(order.Volume);
                         }
                     }
@@ -270,6 +276,7 @@ namespace Temama.Trading.Core.Algo
             }
 
             var sellOrder = _api.PlaceOrder(_base, _fund, "sell", _api.GetRoundedSellVolume(baseAmount), foundPrice);
+            _ordersCache.Add(sellOrder);
             var placedTime = _emulation ? _emulationDateTime : DateTime.Now;
             var currentTime = placedTime;
 
@@ -283,6 +290,7 @@ namespace Temama.Trading.Core.Algo
                 var myOrders = _api.GetMyOrders(_base, _fund);
                 if (!myOrders.Any(o => o.Id == sellOrder.Id)) // If placed order is not at Active Orders - it is filled
                 {
+                    _ordersCache.Remove(sellOrder);
                     NotifyMarketTradeDone(sellOrder);
                     return true;
                 }
@@ -292,6 +300,7 @@ namespace Temama.Trading.Core.Algo
 
             _log.Warning($"Failed to Sell by market price before timeout. Canceling order {sellOrder}");
             _api.CancellOrder(sellOrder);
+            _ordersCache.Remove(sellOrder);
             return false;
         }
 
@@ -307,6 +316,7 @@ namespace Temama.Trading.Core.Algo
             }
 
             var buyOrder = _api.PlaceOrder(_base, _fund, "buy", _api.CalculateBuyVolume(foundPrice, fundAmount), foundPrice);
+            _ordersCache.Add(buyOrder);
             var placedTime = _emulation ? _emulationDateTime : DateTime.Now;
             var currentTime = placedTime;
 
@@ -320,6 +330,7 @@ namespace Temama.Trading.Core.Algo
                 var myOrders = _api.GetMyOrders(_base, _fund);
                 if (!myOrders.Any(o => o.Id == buyOrder.Id))
                 {
+                    _ordersCache.Remove(buyOrder);
                     NotifyMarketTradeDone(buyOrder);
                     return true;
                 }
@@ -329,6 +340,7 @@ namespace Temama.Trading.Core.Algo
 
             _log.Warning($"Failed to Buy by market price before timeout. Canceling order {buyOrder}");
             _api.CancellOrder(buyOrder);
+            _ordersCache.Remove(buyOrder);
             return false;
         }
 
@@ -336,9 +348,9 @@ namespace Temama.Trading.Core.Algo
         {
             var exchange = api ?? _api;
             var order = exchange.PlaceOrder(baseCur, fundCur, side, volume, price);
-            NotifyOrderPlaced(order);
 
-            // TODO: Add to active orders (DB)
+            _ordersCache.Add(order);
+            NotifyOrderPlaced(order);
 
             return order;
         }
@@ -347,6 +359,8 @@ namespace Temama.Trading.Core.Algo
         {
             var exchange = api ?? _api;
             exchange.CancellOrder(order);
+
+            _ordersCache.Remove(order);
             NotifyOrderCancel(order);
             // TODO: Remove from active orders (DB)
         }

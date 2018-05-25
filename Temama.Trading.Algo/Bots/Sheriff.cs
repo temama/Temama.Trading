@@ -70,8 +70,7 @@ namespace Temama.Trading.Algo.Bots
                     _log.Info("Open orders will be cancelled");
                     foreach (var order in _openOrders)
                     {
-                        _api.CancellOrder(order);
-                        NotifyOrderCancel(order);
+                        CancelOrder(order);
                     }
                 }
 

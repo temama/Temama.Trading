@@ -281,8 +281,7 @@ namespace Temama.Trading.Algo.Bots
                 UpdateIterationStats();
                 foreach (var order in _openOrders.Where(o => o.Side == "buy"))
                 {
-                    _api.CancellOrder(order);
-                    NotifyOrderCancel(order);
+                    CancelOrder(order);
                 }
                 _gameState = GameState.None;
             }
