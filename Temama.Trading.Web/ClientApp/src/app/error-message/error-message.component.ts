@@ -12,13 +12,6 @@ export class ErrorModalComponent {
   errMsg: string;
 
   constructor(public bsModalRef: BsModalRef) { }
-
-  public showError(msg) {
-
-    //this.errMsgElement.nativeElement.text = msg;
-    //if (this.errModalElement)
-    //  this.errModalElement.nativeElement.addClass = 'fade show';
-  }
 }
 
 /** error-message component*/
@@ -36,9 +29,6 @@ export class ErrorMessageComponent implements ErrorHandler {
     };
     const bsModal = this.injector.get(BsModalService);
     this.bsModalRef = bsModal.show(ErrorModalComponent, { initialState });
-    //this.bsModalRef.content.closeBtnName = 'Close';
-    //const errModal = new ErrorModalComponent(bsModal);
-    //errModal.showError();
 
     // IMPORTANT: Rethrow the error otherwise it gets swallowed
     throw error;

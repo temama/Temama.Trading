@@ -3,21 +3,22 @@ using System.Collections.Generic;
 
 namespace Temama.Trading.Web.Controllers
 {
+    [Produces("application/json")]
     [Route("api/[controller]")]
     [ApiController]
     public class AppLogController : ControllerBase
     {
         [HttpGet("[action]")]
-        public IEnumerable<string> GetAppLogLines()
+        public IActionResult GetAppLogLines()
         {
             var all = GetAppLog();
-            return new List<string>();
+            return Ok(new List<string>());
         }
 
         [HttpGet("[action]")]
-        public string GetAppLog()
+        public IActionResult GetAppLog()
         {
-            return "Here will be log\r\nof the app";
+            return Ok("Here will be log\r\nof the app");
         }
     }
 }

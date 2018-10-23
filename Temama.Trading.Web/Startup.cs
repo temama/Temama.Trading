@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Temama.Trading.Web.Server;
 
 namespace Temama.Trading.Web
 {
@@ -12,6 +13,8 @@ namespace Temama.Trading.Web
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            Application.Start();
         }
 
         public IConfiguration Configuration { get; }

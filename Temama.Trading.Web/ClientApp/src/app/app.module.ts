@@ -9,12 +9,22 @@ import { ErrorMessageComponent } from './error-message/error-message.component';
 import { ErrorModalComponent } from './error-message/error-message.component';
 import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
+import { StatsComponent } from './stats/stats.component';
+import { BotsComponent } from './bots/bots.component';
+import { ExchangesComponent } from './exchanges/exchanges.component';
+import { NotifsComponent } from './notifs/notifs.component';
+import { SettingsComponent } from './settings/settings.component';
 import { AppLogComponent } from './app-log/app-log.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavMenuComponent,
+    StatsComponent,
+    BotsComponent,
+    ExchangesComponent,
+    NotifsComponent,
+    SettingsComponent,
     AppLogComponent,
     ErrorModalComponent
   ],
@@ -23,7 +33,12 @@ import { AppLogComponent } from './app-log/app-log.component';
     HttpClientModule,
     FormsModule,
     RouterModule.forRoot([
-      { path: '', component: AppLogComponent, pathMatch: 'full' },
+      { path: '', redirectTo: 'stats', pathMatch: 'full' },
+      { path: 'stats', component: StatsComponent },
+      { path: 'bots', component: BotsComponent },
+      { path: 'exchanges', component: ExchangesComponent },
+      { path: 'notifs', component: NotifsComponent },
+      { path: 'settings', component: SettingsComponent },
       { path: 'app-log', component: AppLogComponent }
     ]),
     ModalModule.forRoot()

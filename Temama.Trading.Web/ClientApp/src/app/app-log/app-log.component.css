@@ -1,6 +1,7 @@
 .log-output {
   height: 100%;
   min-height: 100%;
+  width: 100%;
   overflow: scroll;
   font-family: 'Courier New';
   color: grey;

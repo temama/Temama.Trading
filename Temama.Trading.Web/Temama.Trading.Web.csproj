@@ -16,7 +16,9 @@
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="2.1.1" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.1.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.4" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +29,12 @@
 
   <ItemGroup>
     <None Remove="ClientApp\src\app\GlobalErrorHandler.ts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Temama.Trading.Algo\Temama.Trading.Algo.csproj" />
+    <ProjectReference Include="..\Temama.Trading.Core\Temama.Trading.Core.csproj" />
+    <ProjectReference Include="..\Temama.Trading.Exchanges\Temama.Trading.Exchanges.csproj" />
   </ItemGroup>
 
   <ItemGroup>
