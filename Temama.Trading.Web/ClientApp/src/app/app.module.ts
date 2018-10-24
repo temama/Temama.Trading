@@ -15,6 +15,10 @@ import { ExchangesComponent } from './exchanges/exchanges.component';
 import { NotifsComponent } from './notifs/notifs.component';
 import { SettingsComponent } from './settings/settings.component';
 import { AppLogComponent } from './app-log/app-log.component';
+import { LoginComponent } from './login/login.component';
+import { appRoutes } from './routes';
+import { AuthGuard } from './login/auth.guard';
+import { UserService } from './login/UserService';
 
 @NgModule({
   declarations: [
@@ -26,28 +30,23 @@ import { AppLogComponent } from './app-log/app-log.component';
     NotifsComponent,
     SettingsComponent,
     AppLogComponent,
-    ErrorModalComponent
+    ErrorModalComponent,
+    LoginComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
     HttpClientModule,
     FormsModule,
-    RouterModule.forRoot([
-      { path: '', redirectTo: 'stats', pathMatch: 'full' },
-      { path: 'stats', component: StatsComponent },
-      { path: 'bots', component: BotsComponent },
-      { path: 'exchanges', component: ExchangesComponent },
-      { path: 'notifs', component: NotifsComponent },
-      { path: 'settings', component: SettingsComponent },
-      { path: 'app-log', component: AppLogComponent }
-    ]),
+    RouterModule.forRoot(appRoutes),
     ModalModule.forRoot()
   ],
   providers: [
     {
       provide: ErrorHandler,
       useClass: ErrorMessageComponent
-    }
+    },
+    UserService,
+    AuthGuard
   ],
   entryComponents: [
     ErrorModalComponent

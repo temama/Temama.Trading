@@ -31,6 +31,6 @@ export class ErrorMessageComponent implements ErrorHandler {
     this.bsModalRef = bsModal.show(ErrorModalComponent, { initialState });
 
     // IMPORTANT: Rethrow the error otherwise it gets swallowed
-    throw error;
+    //throw error;
   }
 }

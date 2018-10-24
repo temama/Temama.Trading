@@ -1,1 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
+.top-buffer {
+  margin-top: 5px;
+}
+
+input.ng-invalid.ng-dirty {
+  border-color: orangered !important
+}
+
+input.ng-valid.ng-dirty {
+  border-color: lightgreen !important
+}

@@ -28,7 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="ClientApp\src\app\GlobalErrorHandler.ts" />
+    <None Remove="ClientApp\src\app\login\auth.guard.ts" />
+    <None Remove="ClientApp\src\app\login\UserService.ts" />
+    <None Remove="ClientApp\src\app\routes.ts" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,7 +40,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <TypeScriptCompile Include="ClientApp\src\app\GlobalErrorHandler.ts" />
+    <TypeScriptCompile Include="ClientApp\src\app\login\auth.guard.ts" />
+    <TypeScriptCompile Include="ClientApp\src\app\login\UserService.ts" />
+    <TypeScriptCompile Include="ClientApp\src\app\routes.ts" />
   </ItemGroup>
 
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">

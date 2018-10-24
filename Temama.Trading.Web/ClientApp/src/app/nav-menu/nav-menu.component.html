@@ -42,6 +42,11 @@
                 <span class='glyphicon glyphicon-list-alt'></span> App log
               </a>
             </li>
+            <li *ngIf="username" style="border-top-color:black">
+              <a [routerLink]='["/"]' (click)='logout()'>
+                <span class='glyphicon glyphicon-user'></span> Logout ({{username}})
+              </a>
+            </li>
           </ul>
         </div>
     </div>
