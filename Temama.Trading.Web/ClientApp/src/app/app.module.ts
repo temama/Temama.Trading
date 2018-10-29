@@ -1,7 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule, ApplicationRef, ErrorHandler } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
 import { ModalModule } from 'ngx-bootstrap/modal';
 
@@ -19,6 +19,7 @@ import { LoginComponent } from './login/login.component';
 import { appRoutes } from './routes';
 import { AuthGuard } from './login/auth.guard';
 import { UserService } from './login/UserService';
+import { AuthInterceptor } from './login/auth.interceptor';
 
 @NgModule({
   declarations: [
@@ -44,6 +45,11 @@ import { UserService } from './login/UserService';
     {
       provide: ErrorHandler,
       useClass: ErrorMessageComponent
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
     },
     UserService,
     AuthGuard
